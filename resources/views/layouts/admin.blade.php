@@ -10,9 +10,13 @@
 
     <title>@yield('title', 'Kumon Timeslot System')</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite([
+        'resources/css/app.css',
+        'resources/js/app.js'
+    ])
+
+    @stack('styles')
 </head>
-@stack('styles')
 
 <body class="bg-gray-100 font-sans antialiased">
 
@@ -22,16 +26,18 @@
         @include('panel.sidebar')
 
         {{-- Main content area --}}
-        <div class="min-h-screen w-full min-w-0 lg:ml-64">
+        {{-- Do not add w-full here because lg:ml-64 already uses space --}}
+        <div class="min-h-screen min-w-0 lg:ml-64">
 
             {{-- Header --}}
             @include('panel.header')
 
-            <main class="min-w-0 flex-1 overflow-x-hidden">
+            <main class="min-w-0 overflow-x-hidden">
                 <div class="page-content w-full max-w-full px-4 sm:px-6 lg:px-8">
                     @yield('content')
                 </div>
             </main>
+
         </div>
 
     </div>
@@ -39,5 +45,4 @@
     @stack('scripts')
 
 </body>
-
 </html>

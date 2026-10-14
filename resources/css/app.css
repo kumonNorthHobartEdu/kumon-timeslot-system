@@ -12,7 +12,7 @@ body {
     max-width: 100%;
     min-width: 0;
     margin: 0;
-    overflow-x: hidden;
+    overflow-x: auto;
 }
 
 *,
@@ -283,19 +283,42 @@ input.sidebar-toggle {
     opacity: 0;
 }
 
+/* Correct desktop layout without horizontal cropping */
+
 @media (min-width: 1024px) {
-    input.sidebar-toggle {
-        display: none !important;
+    main.ml-64 {
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        margin-left: 16rem !important;
     }
 }
 
-/* --------------------------------------------------------------------------
-   Accessibility and forced-colour mode
-   -------------------------------------------------------------------------- */
+/* Make dashboard grid cards shrink correctly */
 
-@media (forced-colors: active) {
-    input[type="checkbox"] {
-        appearance: auto;
-        -webkit-appearance: auto;
+main .grid,
+main .grid > * {
+    min-width: 0 !important;
+    max-width: 100%;
+}
+
+main .grid > * {
+    overflow-wrap: anywhere;
+}
+
+/* Responsive dashboard columns */
+
+@media (max-width: 1399px) {
+    main .grid-cols-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    main .grid-cols-4,
+    main .grid-cols-3,
+    main .grid-cols-2 {
+        grid-template-columns: minmax(0, 1fr) !important;
     }
 }
