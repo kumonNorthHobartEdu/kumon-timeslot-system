@@ -8,8 +8,10 @@
 
 html,
 body {
-    min-width: 320px;
+    width: 100%;
     max-width: 100%;
+    min-width: 0;
+    margin: 0;
     overflow-x: hidden;
 }
 
@@ -24,6 +26,7 @@ svg,
 video,
 canvas {
     max-width: 100%;
+    height: auto;
 }
 
 input,
@@ -31,16 +34,74 @@ select,
 textarea,
 button {
     max-width: 100%;
+    min-width: 0;
 }
 
-/* Shared responsive drawer used by both the admin and parent sidebars. */
+#app {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+#app > .flex {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Main content and right-side cropping fix
+   -------------------------------------------------------------------------- */
+
+main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+}
+
+main > div,
+.page-content,
+.content-wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+/*
+   The sidebar is 16rem wide on desktop.
+   The main content must use the remaining width.
+*/
+
+@media (min-width: 1024px) {
+    main.ml-64 {
+        width: calc(100% - 16rem) !important;
+        max-width: calc(100% - 16rem) !important;
+        margin-left: 16rem !important;
+        min-width: 0 !important;
+    }
+}
+
+@media (max-width: 1023px) {
+    main.ml-64 {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive sidebar drawer
+   -------------------------------------------------------------------------- */
+
 .responsive-sidebar {
     position: fixed;
     inset: 0 auto 0 0;
     z-index: 50;
     width: 16rem;
     height: 100dvh;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     transform: translateX(-100%);
     transition: transform 220ms ease-in-out;
 }
@@ -68,7 +129,7 @@ button {
     border: 1px solid rgb(148 163 184 / 0.45);
     border-radius: 0.75rem;
     background: #2563eb;
-    color: #fff;
+    color: #ffffff;
     font-size: 1.35rem;
     line-height: 1;
     cursor: pointer;
@@ -92,7 +153,8 @@ button {
     display: block;
 }
 
-/* Existing pages use ml-64 for the desktop sidebar. Remove it on mobile. */
+/* Remove desktop sidebar margin on mobile */
+
 @media (max-width: 1023px) {
     .ml-64 {
         margin-left: 0 !important;
@@ -111,22 +173,45 @@ button {
     }
 }
 
+/* --------------------------------------------------------------------------
+   Responsive grids
+   -------------------------------------------------------------------------- */
+
 @media (max-width: 639px) {
-    /* Keep dashboard cards and filter grids readable on phones. */
     .grid-cols-4,
     .grid-cols-3,
     .grid-cols-2 {
         grid-template-columns: minmax(0, 1fr) !important;
     }
+}
 
-    table {
-        max-width: 100%;
+/* --------------------------------------------------------------------------
+   Tables and wide content
+   -------------------------------------------------------------------------- */
+
+main .overflow-x-auto,
+.table-responsive,
+.overflow-table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+main table {
+    max-width: 100%;
+}
+
+@media (max-width: 767px) {
+    main table {
+        min-width: 700px;
     }
 }
 
+/* --------------------------------------------------------------------------
+   Central checkbox design
+   -------------------------------------------------------------------------- */
 
-
-/* Central checkbox design */
 input[type="checkbox"] {
     appearance: none;
     -webkit-appearance: none;
@@ -141,9 +226,10 @@ input[type="checkbox"] {
     background-color: #ffffff;
     background-image: none;
     cursor: pointer;
-    transition: background-color 0.15s ease,
-                border-color 0.15s ease,
-                box-shadow 0.15s ease;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
 input[type="checkbox"]:hover:not(:disabled) {
@@ -179,15 +265,10 @@ input[type="checkbox"]:disabled {
     cursor: not-allowed;
 }
 
-@media (forced-colors: active) {
-    input[type="checkbox"] {
-        appearance: auto;
-        -webkit-appearance: auto;
-    }
-}
+/* --------------------------------------------------------------------------
+   Invisible sidebar checkbox
+   -------------------------------------------------------------------------- */
 
-/* The drawer control is intentionally invisible; do not apply the visual
-   checkbox design above to it. */
 input.sidebar-toggle {
     appearance: none;
     -webkit-appearance: none;
@@ -205,5 +286,16 @@ input.sidebar-toggle {
 @media (min-width: 1024px) {
     input.sidebar-toggle {
         display: none !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility and forced-colour mode
+   -------------------------------------------------------------------------- */
+
+@media (forced-colors: active) {
+    input[type="checkbox"] {
+        appearance: auto;
+        -webkit-appearance: auto;
     }
 }
