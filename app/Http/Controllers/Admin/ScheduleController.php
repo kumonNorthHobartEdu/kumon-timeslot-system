@@ -49,8 +49,8 @@ class ScheduleController extends Controller
 
         $selectedDate =
             $selectedDay
-                ? $dayDates[$selectedDay->id]
-                : null;
+            ? $dayDates[$selectedDay->id]
+            : null;
 
 
         /*
@@ -248,8 +248,8 @@ class ScheduleController extends Controller
                                 $offering
                                     ->start_time
                             )->format(
-                                'H:i:s'
-                            );
+                                    'H:i:s'
+                                );
                     }
                 );
 
@@ -257,7 +257,7 @@ class ScheduleController extends Controller
         foreach (
             $groupedOfferings
             as $rawTime =>
-                $group
+            $group
         ) {
 
             $scheduleRows->push([
@@ -268,8 +268,8 @@ class ScheduleController extends Controller
                     Carbon::parse(
                         $rawTime
                     )->format(
-                        'g:i A'
-                    ),
+                            'g:i A'
+                        ),
 
                 'class_count' =>
                     $group
@@ -337,19 +337,15 @@ class ScheduleController extends Controller
         $timeOfferings =
             $offerings
                 ->filter(
-                    function (
-                        $offering
-                    ) use (
-                        $selectedTime
-                    ) {
+                    function ($offering) use ($selectedTime) {
 
                         return
                             Carbon::parse(
                                 $offering
                                     ->start_time
                             )->format(
-                                'H:i:s'
-                            )
+                                    'H:i:s'
+                                )
                             ===
                             $selectedTime;
                     }
@@ -462,7 +458,7 @@ class ScheduleController extends Controller
                             'student_id'
                         )
                         ->map(
-                            fn ($id) =>
+                            fn($id) =>
                                 (int)
                                 $id
                         )
@@ -500,118 +496,118 @@ class ScheduleController extends Controller
     |--------------------------------------------------------------------------
     */
 
-public function classStudents(
-    Request $request,
-    SectionOffering $sectionOffering
-) {
-    $validated = $request->validate([
-        'search' => ['nullable', 'string', 'max:150'],
-        'sub_section_id' => ['nullable', 'integer', 'min:1'],
-    ]);
-
-    $search = trim($validated['search'] ?? '');
-    $selectedSubSectionId = $validated['sub_section_id'] ?? null;
-
-    $sectionOffering->load([
-        'section',
-        'day',
-        'subSections',
-    ]);
-
-    $subSections = $sectionOffering->subSections
-        ->sortBy('sub_section_name')
-        ->values();
-
-    // Always restrict results to this class.
-    $baseQuery = Enrolment::query()
-        ->where('section_offering_id', $sectionOffering->id)
-        ->where('is_active', true)
-        ->where('is_wishlist', false);
-
-    // Keep the summary count for the whole class.
-    $confirmedCount = (clone $baseQuery)->count();
-
-    $query = (clone $baseQuery)->with([
-        'subSection',
-        'student.studentStatus',
-        'student.guardians',
-    ]);
-
-    if ($selectedSubSectionId !== null) {
-        $query->where('sub_section_id', $selectedSubSectionId);
-    }
-
-    if ($search !== '') {
-        // Supports first name, last name, full name and Student ID.
-        $terms = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY);
-
-        $query->whereHas('student', function ($studentQuery) use ($terms) {
-            foreach ($terms as $term) {
-                $studentQuery->where(function ($match) use ($term) {
-                    $match
-                        ->where('first_name', 'like', '%' . $term . '%')
-                        ->orWhere('last_name', 'like', '%' . $term . '%')
-                        ->orWhere('external_id', 'like', '%' . $term . '%');
-                });
-            }
-        });
-    }
-
-    $enrolments = $query
-        ->orderBy('student_id')
-        ->orderBy('id')
-        ->paginate(20)
-        ->appends([
-            'search' => $search,
-            'sub_section_id' => $selectedSubSectionId,
+    public function classStudents(
+        Request $request,
+        SectionOffering $sectionOffering
+    ) {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:150'],
+            'sub_section_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
-    $wishlistCount = Enrolment::query()
-        ->where('section_offering_id', $sectionOffering->id)
-        ->where('is_active', true)
-        ->where('is_wishlist', true)
-        ->count();
+        $search = trim($validated['search'] ?? '');
+        $selectedSubSectionId = $validated['sub_section_id'] ?? null;
 
-    $today = now()->startOfDay();
-    $dayName = $sectionOffering->day?->day_name;
+        $sectionOffering->load([
+            'section',
+            'day',
+            'subSections',
+        ]);
 
-    if (
-        $dayName
-        && strtolower($dayName) !== strtolower($today->format('l'))
-    ) {
-        $classDate = $today->copy()->next($dayName);
-    } else {
-        $classDate = $today->copy();
-    }
-
-    $studentIds = $enrolments
-        ->getCollection()
-        ->pluck('student_id')
-        ->unique();
-
-    $vacationStudentIds = collect();
-
-    if ($studentIds->isNotEmpty()) {
-        $vacationStudentIds = StudentLeave::activeOnDate($classDate)
-            ->whereIn('student_id', $studentIds)
-            ->pluck('student_id')
-            ->map(fn ($id) => (int) $id)
-            ->unique()
+        $subSections = $sectionOffering->subSections
+            ->sortBy('sub_section_name')
             ->values();
-    }
 
-    return view('admin.schedule.class-students', compact(
-        'sectionOffering',
-        'enrolments',
-        'confirmedCount',
-        'wishlistCount',
-        'vacationStudentIds',
-        'classDate',
-        'subSections',
-        'search',
-        'selectedSubSectionId'
-    ));
-}
+        // Always restrict results to this class.
+        $baseQuery = Enrolment::query()
+            ->where('section_offering_id', $sectionOffering->id)
+            ->where('is_active', true)
+            ->where('is_wishlist', false);
+
+        // Keep the summary count for the whole class.
+        $confirmedCount = (clone $baseQuery)->count();
+
+        $query = (clone $baseQuery)->with([
+            'subSection',
+            'student.studentStatus',
+            'student.guardians',
+        ]);
+
+        if ($selectedSubSectionId !== null) {
+            $query->where('sub_section_id', $selectedSubSectionId);
+        }
+
+        if ($search !== '') {
+            // Supports first name, last name, full name and Student ID.
+            $terms = preg_split('/\s+/u', $search, -1, PREG_SPLIT_NO_EMPTY);
+
+            $query->whereHas('student', function ($studentQuery) use ($terms) {
+                foreach ($terms as $term) {
+                    $studentQuery->where(function ($match) use ($term) {
+                        $match
+                            ->where('first_name', 'like', '%' . $term . '%')
+                            ->orWhere('last_name', 'like', '%' . $term . '%')
+                            ->orWhere('external_id', 'like', '%' . $term . '%');
+                    });
+                }
+            });
+        }
+
+        $enrolments = $query
+            ->orderBy('student_id')
+            ->orderBy('id')
+            ->paginate(20)
+            ->appends([
+                'search' => $search,
+                'sub_section_id' => $selectedSubSectionId,
+            ]);
+
+        $wishlistCount = Enrolment::query()
+            ->where('section_offering_id', $sectionOffering->id)
+            ->where('is_active', true)
+            ->where('is_wishlist', true)
+            ->count();
+
+        $today = now()->startOfDay();
+        $dayName = $sectionOffering->day?->day_name;
+
+        if (
+            $dayName
+            && strtolower($dayName) !== strtolower($today->format('l'))
+        ) {
+            $classDate = $today->copy()->next($dayName);
+        } else {
+            $classDate = $today->copy();
+        }
+
+        $studentIds = $enrolments
+            ->getCollection()
+            ->pluck('student_id')
+            ->unique();
+
+        $vacationStudentIds = collect();
+
+        if ($studentIds->isNotEmpty()) {
+            $vacationStudentIds = StudentLeave::activeOnDate($classDate)
+                ->whereIn('student_id', $studentIds)
+                ->pluck('student_id')
+                ->map(fn($id) => (int) $id)
+                ->unique()
+                ->values();
+        }
+
+        return view('admin.schedule.class-students', compact(
+            'sectionOffering',
+            'enrolments',
+            'confirmedCount',
+            'wishlistCount',
+            'vacationStudentIds',
+            'classDate',
+            'subSections',
+            'search',
+            'selectedSubSectionId'
+        ));
+    }
 
 
     /*
@@ -690,8 +686,8 @@ public function classStudents(
         $context =
             $this->getDayContext(
                 $allDaysSelected
-                    ? null
-                    : $requestedDayId
+                ? null
+                : $requestedDayId
             );
 
 
@@ -703,20 +699,20 @@ public function classStudents(
 
         $selectedDay =
             $allDaysSelected
-                ? null
-                : $context[
-                    'selectedDay'
-                ];
+            ? null
+            : $context[
+                'selectedDay'
+            ];
 
 
         $selectedDate =
             $selectedDay
-                ? $context[
-                    'dayDates'
-                ][
-                    $selectedDay->id
-                ]
-                : null;
+            ? $context[
+                'dayDates'
+            ][
+                $selectedDay->id
+            ]
+            : null;
 
 
         /*
@@ -837,8 +833,8 @@ public function classStudents(
                                 $offering
                                     ->start_time
                             )->format(
-                                'H:i:s'
-                            );
+                                    'H:i:s'
+                                );
                     }
                 )
                 ->unique()
@@ -848,10 +844,10 @@ public function classStudents(
 
         $selectedOfferingId =
             $allDaysSelected
-                ? null
-                : $request->input(
-                    'offering_id'
-                );
+            ? null
+            : $request->input(
+                'offering_id'
+            );
 
 
         return view(
@@ -892,11 +888,7 @@ public function classStudents(
                 'day_id' => [
                     'required',
 
-                    function (
-                        $attribute,
-                        $value,
-                        $fail
-                    ) {
+                    function ($attribute, $value, $fail) {
 
                         if (
                             $value
@@ -974,10 +966,10 @@ public function classStudents(
 
         if (
             !empty(
-                $validated[
-                    'date'
-                ]
-            )
+            $validated[
+                'date'
+            ]
+        )
         ) {
 
             $historicalDate =
@@ -1034,16 +1026,16 @@ public function classStudents(
 
         if (
             !empty(
-                $validated[
-                    'sub_section_id'
-                ]
-            )
+            $validated[
+                'sub_section_id'
+            ]
+        )
             &&
             !empty(
-                $validated[
-                    'section_id'
-                ]
-            )
+            $validated[
+                'section_id'
+            ]
+        )
         ) {
 
             $validSubSection =
@@ -1270,20 +1262,20 @@ public function classStudents(
 
         $date =
             !empty(
+            $validated[
+                'date'
+            ]
+        )
+            ? Carbon::parse(
                 $validated[
                     'date'
                 ]
             )
-                ? Carbon::parse(
-                    $validated[
-                        'date'
-                    ]
-                )
-                    ->startOfDay()
+                ->startOfDay()
 
-                : $this->resolveDateForDay(
-                    $selectedDay
-                );
+            : $this->resolveDateForDay(
+                $selectedDay
+            );
 
 
         $validated[
@@ -1415,10 +1407,10 @@ public function classStudents(
 
         if (
             !empty(
-                $filters[
-                    'section_id'
-                ]
-            )
+            $filters[
+                'section_id'
+            ]
+        )
         ) {
 
             $offeringQuery->where(
@@ -1438,10 +1430,10 @@ public function classStudents(
 
         if (
             !empty(
-                $filters[
-                    'time'
-                ]
-            )
+            $filters[
+                'time'
+            ]
+        )
         ) {
 
             $offeringQuery
@@ -1462,10 +1454,10 @@ public function classStudents(
 
         if (
             !empty(
-                $filters[
-                    'offering_id'
-                ]
-            )
+            $filters[
+                'offering_id'
+            ]
+        )
         ) {
 
             $offeringQuery->where(
@@ -1485,18 +1477,16 @@ public function classStudents(
 
         if (
             !empty(
-                $filters[
-                    'sub_section_id'
-                ]
-            )
+            $filters[
+                'sub_section_id'
+            ]
+        )
         ) {
 
             $offeringQuery
                 ->whereHas(
                     'subSections',
-                    function ($query) use (
-                        $filters
-                    ) {
+                    function ($query) use ($filters) {
 
                         $query->where(
                             'sub_sections.id',
@@ -1565,10 +1555,10 @@ public function classStudents(
 
         if (
             !empty(
-                $filters[
-                    'sub_section_id'
-                ]
-            )
+            $filters[
+                'sub_section_id'
+            ]
+        )
         ) {
 
             $enrolmentsQuery->where(
@@ -1646,7 +1636,7 @@ public function classStudents(
                         'student_id'
                     )
                     ->map(
-                        fn ($id) =>
+                        fn($id) =>
                             (int)
                             $id
                     )
@@ -1728,7 +1718,7 @@ public function classStudents(
 
                 $attendanceStatus =
                     $attendance
-                        ?->status
+                            ?->status
                     ??
                     'not_marked';
 
@@ -1736,7 +1726,7 @@ public function classStudents(
                 $displayStudentStatus =
                     $student
                         ->studentStatus
-                        ?->status_name
+                            ?->status_name
                     ??
                     'Active';
 
@@ -1744,7 +1734,7 @@ public function classStudents(
                 $statusColour =
                     $student
                         ->studentStatus
-                        ?->color_code
+                            ?->color_code
                     ??
                     null;
             }
@@ -1846,7 +1836,7 @@ public function classStudents(
             $sectionName =
                 $offering
                     ->section
-                    ?->section_name
+                        ?->section_name
                 ??
                 'Class';
 
@@ -1854,7 +1844,7 @@ public function classStudents(
             $subSectionName =
                 $enrolment
                     ->subSection
-                    ?->sub_section_name;
+                        ?->sub_section_name;
 
 
             $classDisplay =
@@ -1876,16 +1866,17 @@ public function classStudents(
             |--------------------------------------------------------------------------
             */
 
-            $studentName =
-                trim(
-                    $student
-                        ->first_name
-                    .
-                    ' '
-                    .
-                    $student
-                        ->last_name
-                );
+            $studentName = trim(
+                $student->first_name . ' ' . $student->last_name
+            );
+
+            $studentNickname = trim(
+                (string) ($student->nickname ?? '')
+            );
+
+            if ($studentNickname !== '') {
+                $studentName .= ' (' . $studentNickname . ')';
+            }
 
 
             /*
@@ -1920,15 +1911,15 @@ public function classStudents(
 
             if (
                 !empty(
-                    $filters[
-                        'include_attendance_status'
-                    ]
-                )
+                $filters[
+                    'include_attendance_status'
+                ]
+            )
             ) {
 
                 $attendanceLabel =
                     match (
-                        $attendanceStatus
+                    $attendanceStatus
                     ) {
                         'present' =>
                             'Present',
@@ -1964,7 +1955,7 @@ public function classStudents(
                 'day' =>
                     $offering
                         ->day
-                        ?->day_name
+                            ?->day_name
                     ??
                     $date->format(
                         'l'
@@ -1975,16 +1966,16 @@ public function classStudents(
                         $offering
                             ->start_time
                     )->format(
-                        'g:i A'
-                    ),
+                            'g:i A'
+                        ),
 
                 'start_time_sort' =>
                     Carbon::parse(
                         $offering
                             ->start_time
                     )->format(
-                        'H:i:s'
-                    ),
+                            'H:i:s'
+                        ),
 
                 'section' =>
                     $sectionName,
@@ -2247,9 +2238,7 @@ public function classStudents(
         $defaultDay =
             $days
                 ->first(
-                    function ($day) use (
-                        $todayName
-                    ) {
+                    function ($day) use ($todayName) {
 
                         return
                             strtolower(
@@ -2274,11 +2263,7 @@ public function classStudents(
             $defaultDay =
                 $days
                     ->sortBy(
-                        function (
-                            $day
-                        ) use (
-                            $dayDates
-                        ) {
+                        function ($day) use ($dayDates) {
 
                             return
                                 $dayDates[

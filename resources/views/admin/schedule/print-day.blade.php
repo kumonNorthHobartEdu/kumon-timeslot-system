@@ -6,10 +6,7 @@
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>
         Daily Class List
@@ -17,7 +14,6 @@
 
 
     <style>
-
         * {
             box-sizing: border-box;
         }
@@ -449,7 +445,6 @@
             }
 
         }
-
     </style>
 
 </head>
@@ -464,11 +459,7 @@
 
     <div class="print-actions no-print">
 
-        <button
-            type="button"
-            onclick="window.print()"
-            class="print-button"
-        >
+        <button type="button" onclick="window.print()" class="print-button">
             Print Whole Day
         </button>
 
@@ -482,9 +473,7 @@
 
     @forelse ($offerings as $offering)
 
-        <section
-            class="class-page {{ !$loop->last ? 'page-break' : '' }}"
-        >
+        <section class="class-page {{ !$loop->last ? 'page-break' : '' }}">
 
 
             {{-- =================================================
@@ -501,26 +490,16 @@
                 <p class="document-date">
 
                     @if ($selectedDay)
-
                         {{ $selectedDay->day_name }}
-
                     @endif
 
 
                     @if ($selectedDate)
-
                         @if ($selectedDay)
-
                             ·
-
                         @endif
 
-                        {{
-                            $selectedDate->format(
-                                'F j, Y'
-                            )
-                        }}
-
+                        {{ $selectedDate->format('F j, Y') }}
                     @endif
 
                 </p>
@@ -537,12 +516,7 @@
 
                 <h2 class="class-name">
 
-                    {{
-                        $offering
-                            ->section
-                            ?->section_name
-                        ?? 'Class'
-                    }}
+                    {{ $offering->section?->section_name ?? 'Class' }}
 
                 </h2>
 
@@ -551,14 +525,7 @@
 
                     <span>
 
-                        {{
-                            $offering
-                                ->day
-                                ?->day_name
-                            ?? $selectedDay
-                                ?->day_name
-                            ?? '—'
-                        }}
+                        {{ $offering->day?->day_name ?? ($selectedDay?->day_name ?? '—') }}
 
                     </span>
 
@@ -570,23 +537,11 @@
 
                     <span>
 
-                        {{
-                            \Carbon\Carbon::parse(
-                                $offering->start_time
-                            )->format(
-                                'g:i A'
-                            )
-                        }}
+                        {{ \Carbon\Carbon::parse($offering->start_time)->format('g:i A') }}
 
                         –
 
-                        {{
-                            \Carbon\Carbon::parse(
-                                $offering->end_time
-                            )->format(
-                                'g:i A'
-                            )
-                        }}
+                        {{ \Carbon\Carbon::parse($offering->end_time)->format('g:i A') }}
 
                     </span>
 
@@ -598,10 +553,7 @@
 
                     <span>
 
-                        {{
-                            $offering
-                                ->duration_minutes
-                        }}
+                        {{ $offering->duration_minutes }}
                         minutes
 
                     </span>
@@ -618,22 +570,11 @@
 
             @php
 
-                $studentCount =
-                    $offering
-                        ->enrolments
-                        ->count();
+                $studentCount = $offering->enrolments->count();
 
-                $maximumSeats =
-                    (int)
-                    $offering->max_seats;
+                $maximumSeats = (int) $offering->max_seats;
 
-                $availableSeats =
-                    max(
-                        0,
-                        $maximumSeats -
-                        $studentCount
-                    );
-
+                $availableSeats = max(0, $maximumSeats - $studentCount);
             @endphp
 
 
@@ -729,30 +670,16 @@
                 <tbody>
 
                     @forelse ($offering->enrolments as $enrolment)
-
                         @php
 
-                            $student =
-                                $enrolment->student;
-
+                            $student = $enrolment->student;
 
                             /*
                              * Find primary guardian.
                              */
-                            $guardian =
-                                $student
-                                    ?->guardians
-                                    ?->first(
-                                        function (
-                                            $guardian
-                                        ) {
-                                            return
-                                                $guardian
-                                                    ->pivot
-                                                    ->is_primary;
-                                        }
-                                    );
-
+                            $guardian = $student?->guardians?->first(function ($guardian) {
+                                return $guardian->pivot->is_primary;
+                            });
 
                             /*
                              * If there is no primary
@@ -760,15 +687,8 @@
                              * guardian connected to
                              * the student.
                              */
-                            if (
-                                !$guardian &&
-                                $student
-                            ) {
-
-                                $guardian =
-                                    $student
-                                        ->guardians
-                                        ->first();
+                            if (!$guardian && $student) {
+                                $guardian = $student->guardians->first();
                             }
 
                         @endphp
@@ -790,15 +710,14 @@
                             <td>
 
                                 @if ($student)
-
                                     {{ $student->first_name }}
 
                                     {{ $student->last_name }}
-
+                                    @if ($student->nickname)
+                                        ({{ $student->nickname }})
+                                    @endif
                                 @else
-
                                     —
-
                                 @endif
 
                             </td>
@@ -808,11 +727,7 @@
                             {{-- Student ID --}}
                             <td>
 
-                                {{
-                                    $student
-                                        ?->external_id
-                                    ?? '—'
-                                }}
+                                {{ $student?->external_id ?? '—' }}
 
                             </td>
 
@@ -822,21 +737,11 @@
                             <td>
 
                                 @if ($guardian)
+                                    {{ $guardian->first_name }}
 
-                                    {{
-                                        $guardian
-                                            ->first_name
-                                    }}
-
-                                    {{
-                                        $guardian
-                                            ->last_name
-                                    }}
-
+                                    {{ $guardian->last_name }}
                                 @else
-
                                     —
-
                                 @endif
 
                             </td>
@@ -846,11 +751,7 @@
                             {{-- Phone --}}
                             <td>
 
-                                {{
-                                    $guardian
-                                        ?->phone
-                                    ?? '—'
-                                }}
+                                {{ $guardian?->phone ?? '—' }}
 
                             </td>
 
@@ -859,12 +760,7 @@
                             {{-- Status --}}
                             <td>
 
-                                {{
-                                    $student
-                                        ?->studentStatus
-                                        ?->status_name
-                                    ?? '—'
-                                }}
+                                {{ $student?->studentStatus?->status_name ?? '—' }}
 
                             </td>
 
@@ -875,16 +771,12 @@
 
                         <tr>
 
-                            <td
-                                colspan="6"
-                                class="empty-row"
-                            >
+                            <td colspan="6" class="empty-row">
                                 No students allocated
                                 to this class.
                             </td>
 
                         </tr>
-
                     @endforelse
 
                 </tbody>
@@ -899,22 +791,11 @@
 
             <div class="page-footer">
 
-                {{
-                    $offering
-                        ->section
-                        ?->section_name
-                    ?? 'Class'
-                }}
+                {{ $offering->section?->section_name ?? 'Class' }}
 
                 ·
 
-                {{
-                    \Carbon\Carbon::parse(
-                        $offering->start_time
-                    )->format(
-                        'g:i A'
-                    )
-                }}
+                {{ \Carbon\Carbon::parse($offering->start_time)->format('g:i A') }}
 
             </div>
 
@@ -941,13 +822,9 @@
                 There are no active class offerings for
 
                 @if ($selectedDay)
-
                     {{ $selectedDay->day_name }}
-
                 @else
-
                     this day
-
                 @endif
 
                 .
@@ -955,8 +832,6 @@
             </p>
 
         </div>
-
-
     @endforelse
 
 

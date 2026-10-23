@@ -11,7 +11,6 @@
     </title>
 
     <style>
-
         body {
             font-family: Arial, sans-serif;
             margin: 30px;
@@ -65,7 +64,6 @@
             }
 
         }
-
     </style>
 
 </head>
@@ -74,63 +72,32 @@
 <body>
 
 
-    <button
-        type="button"
-        onclick="window.print()"
-        class="no-print print-button"
-    >
+    <button type="button" onclick="window.print()" class="no-print print-button">
         Print
     </button>
 
 
     <h1>
-        {{
-            $sectionOffering
-                ->section
-                ?->section_name
-            ?? 'Class'
-        }}
+        {{ $sectionOffering->section?->section_name ?? 'Class' }}
         Student List
     </h1>
 
 
     <div class="details">
 
-        {{
-            $sectionOffering
-                ->day
-                ?->day_name
-        }}
+        {{ $sectionOffering->day?->day_name }}
 
         ·
 
-        {{
-            \Carbon\Carbon::parse(
-                $sectionOffering
-                    ->start_time
-            )->format(
-                'g:i A'
-            )
-        }}
+        {{ \Carbon\Carbon::parse($sectionOffering->start_time)->format('g:i A') }}
 
         –
 
-        {{
-            \Carbon\Carbon::parse(
-                $sectionOffering
-                    ->end_time
-            )->format(
-                'g:i A'
-            )
-        }}
+        {{ \Carbon\Carbon::parse($sectionOffering->end_time)->format('g:i A') }}
 
         ·
 
-        {{
-            $sectionOffering
-                ->enrolments
-                ->count()
-        }}
+        {{ $sectionOffering->enrolments->count() }}
         students
 
     </div>
@@ -174,34 +141,16 @@
         <tbody>
 
             @forelse ($sectionOffering->enrolments as $enrolment)
-
                 @php
 
-                    $student =
-                        $enrolment->student;
+                    $student = $enrolment->student;
 
-                    $guardian =
-                        $student
-                            ?->guardians
-                            ?->first(
-                                function (
-                                    $guardian
-                                ) {
-                                    return
-                                        $guardian
-                                            ->pivot
-                                            ->is_primary;
-                                }
-                            );
+                    $guardian = $student?->guardians?->first(function ($guardian) {
+                        return $guardian->pivot->is_primary;
+                    });
 
-                    if (
-                        !$guardian &&
-                        $student
-                    ) {
-                        $guardian =
-                            $student
-                                ->guardians
-                                ->first();
+                    if (!$guardian && $student) {
+                        $guardian = $student->guardians->first();
                     }
 
                 @endphp
@@ -214,60 +163,34 @@
                     </td>
 
                     <td>
-                        {{
-                            $student
-                                ?->first_name
-                        }}
-                        {{
-                            $student
-                                ?->last_name
-                        }}
+                        {{ $student?->first_name }}
+                        {{ $student?->last_name }}
+                        @if ($student?->nickname)
+                            ({{ $student->nickname }})
+                        @endif
                     </td>
 
                     <td>
-                        {{
-                            $student
-                                ?->external_id
-                            ?? '—'
-                        }}
+                        {{ $student?->external_id ?? '—' }}
                     </td>
 
                     <td>
 
                         @if ($guardian)
-
-                            {{
-                                $guardian
-                                    ->first_name
-                            }}
-                            {{
-                                $guardian
-                                    ->last_name
-                            }}
-
+                            {{ $guardian->first_name }}
+                            {{ $guardian->last_name }}
                         @else
-
                             —
-
                         @endif
 
                     </td>
 
                     <td>
-                        {{
-                            $guardian
-                                ?->phone
-                            ?? '—'
-                        }}
+                        {{ $guardian?->phone ?? '—' }}
                     </td>
 
                     <td>
-                        {{
-                            $student
-                                ?->studentStatus
-                                ?->status_name
-                            ?? '—'
-                        }}
+                        {{ $student?->studentStatus?->status_name ?? '—' }}
                     </td>
 
                 </tr>
@@ -276,15 +199,11 @@
 
                 <tr>
 
-                    <td
-                        colspan="6"
-                        style="text-align:center;"
-                    >
+                    <td colspan="6" style="text-align:center;">
                         No students allocated.
                     </td>
 
                 </tr>
-
             @endforelse
 
         </tbody>

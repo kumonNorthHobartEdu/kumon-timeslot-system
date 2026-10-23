@@ -460,6 +460,15 @@ Route::middleware('auth')
         | Section Offering Routes
         |--------------------------------------------------------------------------
         */
+        Route::get(
+            '/section-offerings/{sectionOffering}/confirm-delete',
+            [
+                SectionOfferingController::class,
+                'confirmDestroy',
+            ]
+        )->name(
+                'section-offerings.confirm-delete'
+            );
 
         Route::get(
             '/section-offerings',

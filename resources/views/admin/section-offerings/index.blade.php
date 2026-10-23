@@ -18,218 +18,139 @@
         ],
     ];
 
-
     /*
      * Interactive uses one shared capacity across its
      * English and Math sub-sections.
      */
-    $interactiveSubSections =
-        $interactiveSubSections
-        ??
-        (
-            $interactiveSection
-                ?->subSections
-            ??
-            collect()
-        );
+    $interactiveSubSections = $interactiveSubSections ?? ($interactiveSection?->subSections ?? collect());
 
+    $interactiveCapacity = (int) (($interactiveRows ?? collect())->max('maximum') ?? 5);
 
-    $interactiveCapacity =
-        (int)
-        (
-            (
-                $interactiveRows
-                ??
-                collect()
-            )
-                ->max(
-                    'maximum'
-                )
-            ??
-            5
-        );
+    $getStatus = function ($allocated, $maximum) {
+        $allocated = (int) $allocated;
 
+        $maximum = (int) $maximum;
 
-    $getStatus =
-        function (
-            $allocated,
-            $maximum
-        ) {
-
-            $allocated =
-                (int) $allocated;
-
-            $maximum =
-                (int) $maximum;
-
-
-            if ($maximum <= 0) {
-                return [
-                    'label' =>
-                        'Not configured',
-
-                    'class' =>
-                        'bg-slate-100 text-slate-600',
-
-                    'bar' =>
-                        'bg-slate-300',
-                ];
-            }
-
-
-            $filledPercentage =
-                (
-                    $allocated /
-                    $maximum
-                ) * 100;
-
-
-            if (
-                $allocated >=
-                $maximum
-            ) {
-                return [
-                    'label' =>
-                        'Full',
-
-                    'class' =>
-                        'bg-red-100 text-red-700',
-
-                    'bar' =>
-                        'bg-red-500',
-                ];
-            }
-
-
-            if (
-                $filledPercentage >= 80
-            ) {
-                return [
-                    'label' =>
-                        'Nearly Full',
-
-                    'class' =>
-                        'bg-amber-100 text-amber-700',
-
-                    'bar' =>
-                        'bg-amber-500',
-                ];
-            }
-
-
+        if ($maximum <= 0) {
             return [
-                'label' =>
-                    'Available',
+                'label' => 'Not configured',
 
-                'class' =>
-                    'bg-green-100 text-green-700',
+                'class' => 'bg-slate-100 text-slate-600',
 
-                'bar' =>
-                    'bg-green-500',
+                'bar' => 'bg-slate-300',
             ];
-        };
+        }
 
+        $filledPercentage = ($allocated / $maximum) * 100;
+
+        if ($allocated >= $maximum) {
+            return [
+                'label' => 'Full',
+
+                'class' => 'bg-red-100 text-red-700',
+
+                'bar' => 'bg-red-500',
+            ];
+        }
+
+        if ($filledPercentage >= 80) {
+            return [
+                'label' => 'Nearly Full',
+
+                'class' => 'bg-amber-100 text-amber-700',
+
+                'bar' => 'bg-amber-500',
+            ];
+        }
+
+        return [
+            'label' => 'Available',
+
+            'class' => 'bg-green-100 text-green-700',
+
+            'bar' => 'bg-green-500',
+        ];
+    };
 @endphp
 
 
 @section('content')
 
-<style>
+    <style>
+        @media print {
 
-    @media print {
+            .no-print {
+                display: none !important;
+            }
 
-        .no-print {
-            display: none !important;
+            .print-container {
+                border: none !important;
+                box-shadow: none !important;
+            }
+
         }
-
-        .print-container {
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-    }
-
-</style>
+    </style>
 
 
-<div class="space-y-7">
+    <div class="space-y-7">
 
 
-    {{-- Messages --}}
+        {{-- Messages --}}
 
-    @if (session('success'))
-
-        <div
-            class="rounded-xl
+        @if (session('success'))
+            <div
+                class="rounded-xl
                    border border-green-200
                    bg-green-50
                    px-5 py-4
                    text-sm
-                   text-green-700"
-        >
-            {{ session('success') }}
-        </div>
-
-    @endif
+                   text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
 
 
-    @if (session('error'))
-
-        <div
-            class="rounded-xl
+        @if (session('error'))
+            <div
+                class="rounded-xl
                    border border-red-200
                    bg-red-50
                    px-5 py-4
                    text-sm
-                   text-red-700"
-        >
-            {{ session('error') }}
-        </div>
-
-    @endif
+                   text-red-700">
+                {{ session('error') }}
+            </div>
+        @endif
 
 
 
-    {{-- Header --}}
+        {{-- Header --}}
 
-    <div
-        class="flex
+        <div
+            class="flex
                flex-col
                gap-5
                lg:flex-row
                lg:items-end
-               lg:justify-between"
-    >
+               lg:justify-between">
 
-        <h1
-            class="text-4xl
+            <h1
+                class="text-4xl
                    font-bold
                    tracking-tight
-                   text-slate-900"
-        >
-            Class Offering
-        </h1>
+                   text-slate-900">
+                Class Offering
+            </h1>
 
 
-        <div
-            class="no-print
+            <div class="no-print
                    flex
                    flex-wrap
-                   gap-3"
-        >
+                   gap-3">
 
-            @if (
-                auth()->user()
-                    ->hasPermission(
-                        'section_offerings.create'
-                    )
-            )
-
-                <a
-                    href="{{ route(
-                        'admin.section-offerings.create'
-                    ) }}"
-                    class="inline-flex
+                @if (auth()->user()->hasPermission('section_offerings.create'))
+                    <a href="{{ route('admin.section-offerings.create') }}"
+                        class="inline-flex
                            h-12
                            items-center
                            rounded-xl
@@ -240,15 +161,13 @@
                            text-sm
                            font-semibold
                            text-blue-700
-                           hover:bg-blue-50"
-                >
-                    + Add Class Offering
-                </a>
-
-            @endif
+                           hover:bg-blue-50">
+                        + Add Class Offering
+                    </a>
+                @endif
 
 
-            {{-- <button
+                {{-- <button
                 type="button"
                 onclick="window.print()"
                 class="inline-flex
@@ -265,67 +184,50 @@
                 Print daily list
             </button> --}}
 
+            </div>
+
         </div>
 
-    </div>
 
 
+        @if ($days->isEmpty())
 
-    @if ($days->isEmpty())
-
-        <div
-            class="rounded-2xl
+            <div
+                class="rounded-2xl
                    border border-slate-200
                    bg-white
                    px-6 py-16
                    text-center
-                   shadow-sm"
-        >
+                   shadow-sm">
 
-            <p
-                class="font-semibold
-                       text-slate-800"
-            >
-                No active class offerings found.
-            </p>
+                <p class="font-semibold
+                       text-slate-800">
+                    No active class offerings found.
+                </p>
 
 
-            <p
-                class="mt-2
+                <p class="mt-2
                        text-sm
-                       text-slate-500"
-            >
-                Create a class offering to begin.
-            </p>
+                       text-slate-500">
+                    Create a class offering to begin.
+                </p>
 
-        </div>
+            </div>
+        @else
+            {{-- Day Tabs --}}
 
-    @else
-
-
-        {{-- Day Tabs --}}
-
-        <div
-            class="no-print
+            <div class="no-print
                    flex
                    flex-wrap
-                   gap-3"
-        >
+                   gap-3">
 
-            @foreach ($days as $day)
+                @foreach ($days as $day)
+                    <a href="{{ route('admin.section-offerings.index', [
+                        'day_id' => $day->id,
 
-                <a
-                    href="{{ route(
-                        'admin.section-offerings.index',
-                        [
-                            'day_id' =>
-                                $day->id,
-
-                            'subject' =>
-                                $selectedSubject,
-                        ]
-                    ) }}"
-                    class="inline-flex
+                        'subject' => $selectedSubject,
+                    ]) }}"
+                        class="inline-flex
                            min-w-32
                            items-center
                            justify-center
@@ -334,31 +236,21 @@
                            px-6 py-3
                            text-sm
                            font-semibold
-                           {{
-                               (int)
-                               $selectedDayId
-                               ===
-                               (int)
-                               $day->id
+                           {{ (int) $selectedDayId === (int) $day->id
+                               ? 'border-blue-600 bg-blue-600 text-white'
+                               : 'border-slate-200 bg-white text-blue-700 hover:bg-blue-50' }}">
+                        {{ $day->day_name }}
+                    </a>
+                @endforeach
 
-                                   ? 'border-blue-600 bg-blue-600 text-white'
-
-                                   : 'border-slate-200 bg-white text-blue-700 hover:bg-blue-50'
-                           }}"
-                >
-                    {{ $day->day_name }}
-                </a>
-
-            @endforeach
-
-        </div>
+            </div>
 
 
 
-        {{-- Subject Tabs --}}
+            {{-- Subject Tabs --}}
 
-        <div
-            class="no-print
+            <div
+                class="no-print
                    grid
                    max-w-3xl
                    grid-cols-3
@@ -366,495 +258,147 @@
                    rounded-xl
                    border
                    border-slate-200
-                   bg-white"
-        >
+                   bg-white">
 
-            <a
-                href="{{ route(
-                    'admin.section-offerings.index',
-                    [
-                        'day_id' =>
-                            $selectedDayId,
+                <a href="{{ route('admin.section-offerings.index', [
+                    'day_id' => $selectedDayId,
 
-                        'subject' =>
-                            'english',
-                    ]
-                ) }}"
-                class="flex
+                    'subject' => 'english',
+                ]) }}"
+                    class="flex
                        h-16
                        items-center
                        justify-center
                        border-r
                        font-semibold
-                       {{
-                           $selectedSubject ===
-                           'english'
-
-                               ? 'bg-blue-600 text-white'
-
-                               : 'text-slate-700 hover:bg-blue-50'
-                       }}"
-            >
-                English
-            </a>
+                       {{ $selectedSubject === 'english' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-blue-50' }}">
+                    English
+                </a>
 
 
-            <a
-                href="{{ route(
-                    'admin.section-offerings.index',
-                    [
-                        'day_id' =>
-                            $selectedDayId,
+                <a href="{{ route('admin.section-offerings.index', [
+                    'day_id' => $selectedDayId,
 
-                        'subject' =>
-                            'math',
-                    ]
-                ) }}"
-                class="flex
+                    'subject' => 'math',
+                ]) }}"
+                    class="flex
                        h-16
                        items-center
                        justify-center
                        border-r
                        font-semibold
-                       {{
-                           $selectedSubject ===
-                           'math'
-
-                               ? 'bg-blue-600 text-white'
-
-                               : 'text-slate-700 hover:bg-blue-50'
-                       }}"
-            >
-                Math
-            </a>
+                       {{ $selectedSubject === 'math' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-blue-50' }}">
+                    Math
+                </a>
 
 
-            <a
-                href="{{ route(
-                    'admin.section-offerings.index',
-                    [
-                        'day_id' =>
-                            $selectedDayId,
+                <a href="{{ route('admin.section-offerings.index', [
+                    'day_id' => $selectedDayId,
 
-                        'subject' =>
-                            'interactive',
-                    ]
-                ) }}"
-                class="flex
+                    'subject' => 'interactive',
+                ]) }}"
+                    class="flex
                        h-16
                        items-center
                        justify-center
                        font-semibold
-                       {{
-                           $selectedSubject ===
-                           'interactive'
+                       {{ $selectedSubject === 'interactive' ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-blue-50' }}">
+                    Interactive
+                </a>
 
-                               ? 'bg-blue-600 text-white'
-
-                               : 'text-slate-700 hover:bg-blue-50'
-                       }}"
-            >
-                Interactive
-            </a>
-
-        </div>
+            </div>
 
 
 
-        {{-- Information --}}
+            {{-- Information --}}
 
-        <div
-            class="rounded-2xl
+            <div
+                class="rounded-2xl
                    border
                    border-blue-100
                    bg-blue-50/50
                    px-6 py-5
                    text-sm
-                   text-slate-600"
-        >
+                   text-slate-600">
 
-            @if (
-                $selectedSubject ===
-                'english'
-            )
+                @if ($selectedSubject === 'english')
 
-                <strong>
-                    English
-                </strong>
+                    <strong>
+                        English
+                    </strong>
 
-                maximum
-                {{ $englishCapacity ?: '—' }}
-                seats per timeslot.
+                    maximum
+                    {{ $englishCapacity ?: '—' }}
+                    seats per timeslot.
+                @elseif ($selectedSubject === 'math')
+                    <strong>
+                        Math
+                    </strong>
 
+                    shared maximum
+                    {{ $mathCapacity ?: '—' }}
+                    students
 
-            @elseif (
-                $selectedSubject ===
-                'math'
-            )
+                    @if ($mathSubSections->isNotEmpty())
+                        across
 
-                <strong>
-                    Math
-                </strong>
-
-                shared maximum
-                {{ $mathCapacity ?: '—' }}
-                students
-
-                @if (
-                    $mathSubSections
-                        ->isNotEmpty()
-                )
-
-                    across
-
-                    {{
-                        $mathSubSections
-                            ->pluck(
-                                'sub_section_name'
-                            )
-                            ->implode(', ')
-                    }}.
-
-                @endif
-
-
-            @else
-
-                <strong>
-                    Interactive
-                </strong>
-
-                has one shared maximum of
-                {{ $interactiveCapacity ?: 5 }}
-                students across
-
-                @if (
-                    $interactiveSubSections
-                        ->isNotEmpty()
-                )
-
-                    {{
-                        $interactiveSubSections
-                            ->pluck(
-                                'sub_section_name'
-                            )
-                            ->implode(' and ')
-                    }}.
-
+                        {{ $mathSubSections->pluck('sub_section_name')->implode(', ') }}.
+                    @endif
                 @else
+                    <strong>
+                        Interactive
+                    </strong>
 
-                    English and Math.
+                    has one shared maximum of
+                    {{ $interactiveCapacity ?: 5 }}
+                    students across
+
+                    @if ($interactiveSubSections->isNotEmpty())
+                        {{ $interactiveSubSections->pluck('sub_section_name')->implode(' and ') }}.
+                    @else
+                        English and Math.
+                    @endif
 
                 @endif
-
-            @endif
-
-        </div>
-
-
-
-        <div>
-
-            <p
-                class="text-xs
-                       font-semibold
-                       uppercase
-                       text-slate-400"
-            >
-                Selected Day
-            </p>
-
-            <p
-                class="mt-2
-                       text-xl
-                       font-bold
-                       text-slate-900"
-            >
-                {{
-                    $selectedDay
-                        ?->day_name
-                    ?? '—'
-                }}
-            </p>
-
-        </div>
-
-
-
-        {{-- English --}}
-
-        @if (
-            $selectedSubject ===
-            'english'
-        )
-
-            <div
-                class="print-container
-                       overflow-hidden
-                       rounded-2xl
-                       border
-                       border-slate-200
-                       bg-white
-                       shadow-sm"
-            >
-
-                <table class="min-w-full">
-
-                    <thead class="bg-slate-50">
-
-                        <tr>
-
-                            <th class="px-7 py-5 text-left">
-                                Time
-                            </th>
-
-
-                            <th class="px-7 py-5 text-center">
-                                Enrolled / Capacity
-                            </th>
-
-                            <th class="px-7 py-5 text-center">
-                                Availability
-                            </th>
-
-                            <th class="px-7 py-5 text-center">
-                                Status
-                            </th>
-
-                            <th class="no-print px-7 py-5 text-center">
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody class="divide-y">
-
-                        @forelse (
-                            $englishRows
-                            as $row
-                        )
-
-                            @php
-
-                                $allocated =
-                                    (int)
-                                    $row['allocated'];
-
-                                $maximum =
-                                    (int)
-                                    $row['maximum'];
-
-                                $available =
-                                    max(
-                                        0,
-                                        $maximum -
-                                        $allocated
-                                    );
-
-                                $status =
-                                    $getStatus(
-                                        $allocated,
-                                        $maximum
-                                    );
-
-                            @endphp
-
-
-                            <tr>
-
-                                <td class="px-7 py-7">
-
-                                    <strong class="text-lg">
-                                        {{ $row['time'] }}
-                                    </strong>
-
-                                    <div
-                                        class="text-xs
-                                               text-slate-400"
-                                    >
-                                        to
-                                        {{ $row['end_time'] }}
-                                    </div>
-
-                                </td>
-
-
-                                <td
-                                    class="px-7 py-7
-                                           text-center"
-                                >
-                                    <strong>
-                                        {{ $allocated }}
-                                        /
-                                        {{ $maximum }}
-                                    </strong>
-                                </td>
-
-
-                                <td
-                                    class="px-7 py-7
-                                           text-center"
-                                >
-                                    {{ $available }}
-                                    seats available
-                                </td>
-
-
-                                <td
-                                    class="px-7 py-7
-                                           text-center"
-                                >
-
-                                    <span
-                                        class="rounded-xl
-                                               px-4 py-2
-                                               text-xs
-                                               font-semibold
-                                               {{
-                                                   $status[
-                                                       'class'
-                                                   ]
-                                               }}"
-                                    >
-                                        {{ $status['label'] }}
-                                    </span>
-
-                                </td>
-
-
-                                <td
-                                    class="no-print
-                                           px-7 py-7"
-                                >
-
-                                    <div
-                                        class="flex
-                                               justify-center
-                                               gap-2"
-                                    >
-
-                                        @if (
-                                            auth()
-                                                ->user()
-                                                ->hasPermission(
-                                                    'section_offerings.edit'
-                                                )
-                                        )
-
-                                            <a
-                                                href="{{ route(
-                                                    'admin.section-offerings.edit',
-                                                    $row['id']
-                                                ) }}"
-                                                class="rounded-lg
-                                                       border
-                                                       border-blue-300
-                                                       px-4 py-2
-                                                       text-sm
-                                                       font-semibold
-                                                       text-blue-700
-                                                       hover:bg-blue-50"
-                                            >
-                                                View
-                                            </a>
-
-                                        @endif
-
-
-                                        @if (
-                                            auth()
-                                                ->user()
-                                                ->hasPermission(
-                                                    'section_offerings.delete'
-                                                )
-                                        )
-
-                                            <form
-                                                method="POST"
-                                                action="{{ route(
-                                                    'admin.section-offerings.destroy',
-                                                    $row['id']
-                                                ) }}"
-                                                onsubmit="return confirm('Delete this class offering?');"
-                                            >
-
-                                                @csrf
-                                                @method('DELETE')
-
-                                                <button
-                                                    type="submit"
-                                                    class="rounded-lg
-                                                           border
-                                                           border-red-300
-                                                           px-4 py-2
-                                                           text-sm
-                                                           font-semibold
-                                                           text-red-600
-                                                           hover:bg-red-50"
-                                                >
-                                                    Delete
-                                                </button>
-
-                                            </form>
-
-                                        @endif
-
-                                    </div>
-
-                                </td>
-
-                            </tr>
-
-
-                        @empty
-
-                            <tr>
-
-                                <td
-                                    colspan="5"
-                                    class="px-6 py-16
-                                           text-center
-                                           text-slate-500"
-                                >
-                                    No English classes
-                                    on this day.
-                                </td>
-
-                            </tr>
-
-                        @endforelse
-
-                    </tbody>
-
-                </table>
 
             </div>
 
-        @endif
+
+
+            <div>
+
+                <p
+                    class="text-xs
+                       font-semibold
+                       uppercase
+                       text-slate-400">
+                    Selected Day
+                </p>
+
+                <p
+                    class="mt-2
+                       text-xl
+                       font-bold
+                       text-slate-900">
+                    {{ $selectedDay?->day_name ?? '—' }}
+                </p>
+
+            </div>
 
 
 
-        {{-- Math --}}
+            {{-- English --}}
 
-        @if (
-            $selectedSubject ===
-            'math'
-        )
+            @if ($selectedSubject === 'english')
 
-            <div
-                class="print-container
+                <div
+                    class="print-container
                        overflow-hidden
                        rounded-2xl
                        border
                        border-slate-200
                        bg-white
-                       shadow-sm"
-            >
-
-                <div class="overflow-x-auto">
+                       shadow-sm">
 
                     <table class="min-w-full">
 
@@ -862,42 +406,24 @@
 
                             <tr>
 
-                                <th class="px-6 py-5 text-left">
+                                <th class="px-7 py-5 text-left">
                                     Time
                                 </th>
 
 
-                                @foreach (
-                                    $mathSubSections
-                                    as $subSection
-                                )
-
-                                    <th
-                                        class="px-5 py-5
-                                               text-center"
-                                    >
-                                        {{
-                                            $subSection
-                                                ->sub_section_name
-                                        }}
-                                    </th>
-
-                                @endforeach
-
-
-                                <th class="px-6 py-5 text-center">
-                                    Math Total / Capacity
+                                <th class="px-7 py-5 text-center">
+                                    Enrolled / Capacity
                                 </th>
 
-                                <th class="px-6 py-5 text-center">
+                                <th class="px-7 py-5 text-center">
                                     Availability
                                 </th>
 
-                                <th class="px-6 py-5 text-center">
+                                <th class="px-7 py-5 text-center">
                                     Status
                                 </th>
 
-                                <th class="no-print px-6 py-5 text-center">
+                                <th class="no-print px-7 py-5 text-center">
                                     Action
                                 </th>
 
@@ -908,56 +434,30 @@
 
                         <tbody class="divide-y">
 
-                            @forelse (
-                                $mathRows
-                                as $row
-                            )
-
+                            @forelse ($englishRows
+                                    as $row)
                                 @php
 
-                                    $allocated =
-                                        (int)
-                                        $row[
-                                            'math_total'
-                                        ];
+                                    $allocated = (int) $row['allocated'];
 
-                                    $maximum =
-                                        (int)
-                                        $row[
-                                            'math_maximum'
-                                        ];
+                                    $maximum = (int) $row['maximum'];
 
-                                    $available =
-                                        max(
-                                            0,
-                                            $maximum -
-                                            $allocated
-                                        );
+                                    $available = max(0, $maximum - $allocated);
 
-                                    $status =
-                                        $getStatus(
-                                            $allocated,
-                                            $maximum
-                                        );
-
+                                    $status = $getStatus($allocated, $maximum);
                                 @endphp
 
 
                                 <tr>
 
-                                    <td
-                                        class="px-6 py-7
-                                               whitespace-nowrap"
-                                    >
+                                    <td class="px-7 py-7">
 
                                         <strong class="text-lg">
                                             {{ $row['time'] }}
                                         </strong>
 
-                                        <div
-                                            class="text-xs
-                                                   text-slate-400"
-                                        >
+                                        <div class="text-xs
+                                               text-slate-400">
                                             to
                                             {{ $row['end_time'] }}
                                         </div>
@@ -965,180 +465,73 @@
                                     </td>
 
 
-                                    @foreach (
-                                        $mathSubSections
-                                        as $subSection
-                                    )
-
-                                        <td
-                                            class="px-5 py-7
-                                                   text-center"
-                                        >
-
-                                            @if (
-                                                in_array(
-                                                    $subSection->id,
-                                                    $row[
-                                                        'available_sub_sections'
-                                                    ]
-                                                )
-                                            )
-
-                                                <strong>
-                                                    {{
-                                                        $row[
-                                                            'math_allocations'
-                                                        ][
-                                                            $subSection
-                                                                ->id
-                                                        ]
-                                                        ?? 0
-                                                    }}
-                                                </strong>
-
-                                            @else
-
-                                                <span
-                                                    class="text-slate-300"
-                                                >
-                                                    —
-                                                </span>
-
-                                            @endif
-
-                                        </td>
-
-                                    @endforeach
-
-
-                                    <td
-                                        class="px-6 py-7
-                                               text-center"
-                                    >
-
-                                        <strong class="text-lg">
+                                    <td class="px-7 py-7
+                                           text-center">
+                                        <strong>
                                             {{ $allocated }}
                                             /
                                             {{ $maximum }}
                                         </strong>
-
-                                        <div
-                                            class="text-xs
-                                                   text-slate-400"
-                                        >
-                                            shared seats
-                                        </div>
-
                                     </td>
 
 
-                                    <td
-                                        class="px-6 py-7
-                                               text-center"
-                                    >
+                                    <td class="px-7 py-7
+                                           text-center">
                                         {{ $available }}
                                         seats available
                                     </td>
 
 
-                                    <td
-                                        class="px-6 py-7
-                                               text-center"
-                                    >
+                                    <td class="px-7 py-7
+                                           text-center">
 
                                         <span
                                             class="rounded-xl
-                                                   px-4 py-2
-                                                   text-xs
-                                                   font-semibold
-                                                   {{
-                                                       $status[
-                                                           'class'
-                                                       ]
-                                                   }}"
-                                        >
+                                               px-4 py-2
+                                               text-xs
+                                               font-semibold
+                                               {{ $status['class'] }}">
                                             {{ $status['label'] }}
                                         </span>
 
                                     </td>
 
 
-                                    <td
-                                        class="no-print
-                                               px-6 py-7"
-                                    >
+                                    <td class="no-print
+                                           px-7 py-7">
 
                                         <div
                                             class="flex
-                                                   justify-center
-                                                   gap-2"
-                                        >
+                                               justify-center
+                                               gap-2">
 
-                                            @if (
-                                                auth()
-                                                    ->user()
-                                                    ->hasPermission(
-                                                        'section_offerings.edit'
-                                                    )
-                                            )
-
-                                                <a
-                                                    href="{{ route(
-                                                        'admin.section-offerings.edit',
-                                                        $row['id']
-                                                    ) }}"
+                                            @if (auth()->user()->hasPermission('section_offerings.edit'))
+                                                <a href="{{ route('admin.section-offerings.edit', $row['id']) }}"
                                                     class="rounded-lg
-                                                           border
-                                                           border-blue-300
-                                                           px-4 py-2
-                                                           text-sm
-                                                           font-semibold
-                                                           text-blue-700
-                                                           hover:bg-blue-50"
-                                                >
+                                                       border
+                                                       border-blue-300
+                                                       px-4 py-2
+                                                       text-sm
+                                                       font-semibold
+                                                       text-blue-700
+                                                       hover:bg-blue-50">
                                                     View
                                                 </a>
-
                                             @endif
 
 
-                                            @if (
-                                                auth()
-                                                    ->user()
-                                                    ->hasPermission(
-                                                        'section_offerings.delete'
-                                                    )
-                                            )
-
-                                                <form
-                                                    method="POST"
-                                                    action="{{ route(
-                                                        'admin.section-offerings.destroy',
-                                                        $row['id']
-                                                    ) }}"
-                                                    onsubmit="return confirm('Delete this Math offering?');"
-                                                >
-
-                                                    @csrf
-                                                    @method('DELETE')
-
-
-                                                    <button
-                                                        type="submit"
-                                                        class="rounded-lg
-                                                               border
-                                                               border-red-300
-                                                               px-4 py-2
-                                                               text-sm
-                                                               font-semibold
-                                                               text-red-600
-                                                               hover:bg-red-50"
-                                                    >
-                                                        Delete
-                                                    </button>
-
-                                                </form>
-
+                                            @if (auth()->user()->hasPermission('section_offerings.delete'))
+                                                <a href="{{ route('admin.section-offerings.confirm-delete', $row['id']) }}"
+                                                    class="rounded-lg
+               border
+               border-red-300
+               px-4 py-2
+               text-sm
+               font-semibold
+               text-red-600
+               hover:bg-red-50">
+                                                    Delete
+                                                </a>
                                             @endif
 
                                         </div>
@@ -1152,22 +545,15 @@
 
                                 <tr>
 
-                                    <td
-                                        colspan="{{
-                                            5 +
-                                            $mathSubSections
-                                                ->count()
-                                        }}"
+                                    <td colspan="5"
                                         class="px-6 py-16
-                                               text-center
-                                               text-slate-500"
-                                    >
-                                        No Math classes
+                                           text-center
+                                           text-slate-500">
+                                        No English classes
                                         on this day.
                                     </td>
 
                                 </tr>
-
                             @endforelse
 
                         </tbody>
@@ -1176,324 +562,452 @@
 
                 </div>
 
-            </div>
-
-        @endif
+            @endif
 
 
 
-        {{-- Interactive --}}
+            {{-- Math --}}
 
-        @if (
-            $selectedSubject ===
-            'interactive'
-        )
+            @if ($selectedSubject === 'math')
 
-            <div
-                class="print-container
+                <div
+                    class="print-container
                        overflow-hidden
                        rounded-2xl
                        border
                        border-slate-200
                        bg-white
-                       shadow-sm"
-            >
+                       shadow-sm">
 
-                <table class="min-w-full">
+                    <div class="overflow-x-auto">
 
-                    <thead class="bg-slate-50">
+                        <table class="min-w-full">
 
-                        <tr>
+                            <thead class="bg-slate-50">
 
-                            <th class="px-7 py-5 text-left">
-                                Time
-                            </th>
+                                <tr>
 
-
-                            @foreach (
-                                $interactiveSubSections
-                                as $subSection
-                            )
-
-                                <th class="px-6 py-5 text-center">
-                                    {{
-                                        $subSection
-                                            ->sub_section_name
-                                    }}
-                                </th>
-
-                            @endforeach
-
-                            <th class="px-7 py-5 text-center">
-                                Interactive Total / Capacity
-                            </th>
-
-                            <th class="px-7 py-5 text-center">
-                                Availability
-                            </th>
-
-                            <th class="px-7 py-5 text-center">
-                                Status
-                            </th>
-
-                            <th class="no-print px-7 py-5 text-center">
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
+                                    <th class="px-6 py-5 text-left">
+                                        Time
+                                    </th>
 
 
-                    <tbody class="divide-y">
+                                    @foreach ($mathSubSections as $subSection)
+                                        <th class="px-5 py-5
+                                               text-center">
+                                            {{ $subSection->sub_section_name }}
+                                        </th>
+                                    @endforeach
 
-                        @forelse (
-                            $interactiveRows
-                            as $row
-                        )
 
-                            @php
+                                    <th class="px-6 py-5 text-center">
+                                        Math Total / Capacity
+                                    </th>
 
-                                $allocated =
-                                    (int)
-                                    $row['allocated'];
+                                    <th class="px-6 py-5 text-center">
+                                        Availability
+                                    </th>
 
-                                $maximum =
-                                    (int)
-                                    $row['maximum'];
+                                    <th class="px-6 py-5 text-center">
+                                        Status
+                                    </th>
 
-                                $available =
-                                    max(
-                                        0,
-                                        $maximum -
-                                        $allocated
-                                    );
+                                    <th class="no-print px-6 py-5 text-center">
+                                        Action
+                                    </th>
 
-                                $status =
-                                    $getStatus(
-                                        $allocated,
-                                        $maximum
-                                    );
+                                </tr>
 
-                                $interactiveAllocations =
-                                    $row[
-                                        'interactive_allocations'
-                                    ]
-                                    ??
-                                    [];
+                            </thead>
 
-                            @endphp
 
+                            <tbody class="divide-y">
+
+                                @forelse ($mathRows
+                                        as $row)
+                                    @php
+
+                                        $allocated = (int) $row['math_total'];
+
+                                        $maximum = (int) $row['math_maximum'];
+
+                                        $available = max(0, $maximum - $allocated);
+
+                                        $status = $getStatus($allocated, $maximum);
+                                    @endphp
+
+
+                                    <tr>
+
+                                        <td
+                                            class="px-6 py-7
+                                               whitespace-nowrap">
+
+                                            <strong class="text-lg">
+                                                {{ $row['time'] }}
+                                            </strong>
+
+                                            <div
+                                                class="text-xs
+                                                   text-slate-400">
+                                                to
+                                                {{ $row['end_time'] }}
+                                            </div>
+
+                                        </td>
+
+
+                                        @foreach ($mathSubSections as $subSection)
+                                            <td
+                                                class="px-5 py-7
+                                                   text-center">
+
+                                                @if (in_array($subSection->id, $row['available_sub_sections']))
+                                                    <strong>
+                                                        {{ $row['math_allocations'][$subSection->id] ?? 0 }}
+                                                    </strong>
+                                                @else
+                                                    <span class="text-slate-300">
+                                                        —
+                                                    </span>
+                                                @endif
+
+                                            </td>
+                                        @endforeach
+
+
+                                        <td class="px-6 py-7
+                                               text-center">
+
+                                            <strong class="text-lg">
+                                                {{ $allocated }}
+                                                /
+                                                {{ $maximum }}
+                                            </strong>
+
+                                            <div
+                                                class="text-xs
+                                                   text-slate-400">
+                                                shared seats
+                                            </div>
+
+                                        </td>
+
+
+                                        <td class="px-6 py-7
+                                               text-center">
+                                            {{ $available }}
+                                            seats available
+                                        </td>
+
+
+                                        <td class="px-6 py-7
+                                               text-center">
+
+                                            <span
+                                                class="rounded-xl
+                                                   px-4 py-2
+                                                   text-xs
+                                                   font-semibold
+                                                   {{ $status['class'] }}">
+                                                {{ $status['label'] }}
+                                            </span>
+
+                                        </td>
+
+
+                                        <td class="no-print
+                                               px-6 py-7">
+
+                                            <div
+                                                class="flex
+                                                   justify-center
+                                                   gap-2">
+
+                                                @if (auth()->user()->hasPermission('section_offerings.edit'))
+                                                    <a href="{{ route('admin.section-offerings.edit', $row['id']) }}"
+                                                        class="rounded-lg
+                                                           border
+                                                           border-blue-300
+                                                           px-4 py-2
+                                                           text-sm
+                                                           font-semibold
+                                                           text-blue-700
+                                                           hover:bg-blue-50">
+                                                        View
+                                                    </a>
+                                                @endif
+
+
+                                                @if (auth()->user()->hasPermission('section_offerings.delete'))
+                                                    <form method="POST"
+                                                        action="{{ route('admin.section-offerings.destroy', $row['id']) }}"
+                                                        onsubmit="return confirm('Delete this Math offering?');">
+
+                                                        @csrf
+                                                        @method('DELETE')
+
+
+                                                        <button type="submit"
+                                                            class="rounded-lg
+                                                               border
+                                                               border-red-300
+                                                               px-4 py-2
+                                                               text-sm
+                                                               font-semibold
+                                                               text-red-600
+                                                               hover:bg-red-50">
+                                                            Delete
+                                                        </button>
+
+                                                    </form>
+                                                @endif
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+
+                                @empty
+
+                                    <tr>
+
+                                        <td colspan="{{ 5 + $mathSubSections->count() }}"
+                                            class="px-6 py-16
+                                               text-center
+                                               text-slate-500">
+                                            No Math classes
+                                            on this day.
+                                        </td>
+
+                                    </tr>
+                                @endforelse
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            @endif
+
+
+
+            {{-- Interactive --}}
+
+            @if ($selectedSubject === 'interactive')
+
+                <div
+                    class="print-container
+                       overflow-hidden
+                       rounded-2xl
+                       border
+                       border-slate-200
+                       bg-white
+                       shadow-sm">
+
+                    <table class="min-w-full">
+
+                        <thead class="bg-slate-50">
 
                             <tr>
 
-                                <td class="px-7 py-7">
-
-                                    <strong class="text-lg">
-                                        {{ $row['time'] }}
-                                    </strong>
-
-                                    <div
-                                        class="text-xs
-                                               text-slate-400"
-                                    >
-                                        to
-                                        {{ $row['end_time'] }}
-                                    </div>
-
-                                </td>
+                                <th class="px-7 py-5 text-left">
+                                    Time
+                                </th>
 
 
-                                @foreach (
-                                    $interactiveSubSections
-                                    as $subSection
-                                )
-
-                                    <td
-                                        class="px-6 py-7
-                                               text-center
-                                               font-semibold"
-                                    >
-                                        {{
-                                            (int)
-                                            (
-                                                $interactiveAllocations[
-                                                    $subSection->id
-                                                ]
-                                                ??
-                                                0
-                                            )
-                                        }}
-                                    </td>
-
+                                @foreach ($interactiveSubSections as $subSection)
+                                    <th class="px-6 py-5 text-center">
+                                        {{ $subSection->sub_section_name }}
+                                    </th>
                                 @endforeach
 
+                                <th class="px-7 py-5 text-center">
+                                    Interactive Total / Capacity
+                                </th>
 
-                                <td
-                                    class="px-7 py-7
-                                           text-center"
-                                >
-                                    <strong>
-                                        {{ $allocated }}
-                                        /
-                                        {{ $maximum }}
-                                    </strong>
-                                </td>
+                                <th class="px-7 py-5 text-center">
+                                    Availability
+                                </th>
+
+                                <th class="px-7 py-5 text-center">
+                                    Status
+                                </th>
+
+                                <th class="no-print px-7 py-5 text-center">
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
 
 
-                                <td
-                                    class="px-7 py-7
-                                           text-center"
-                                >
-                                    {{ $available }}
-                                    seats available
-                                </td>
+                        <tbody class="divide-y">
+
+                            @forelse ($interactiveRows
+                                    as $row)
+                                @php
+
+                                    $allocated = (int) $row['allocated'];
+
+                                    $maximum = (int) $row['maximum'];
+
+                                    $available = max(0, $maximum - $allocated);
+
+                                    $status = $getStatus($allocated, $maximum);
+
+                                    $interactiveAllocations = $row['interactive_allocations'] ?? [];
+                                @endphp
 
 
-                                <td
-                                    class="px-7 py-7
-                                           text-center"
-                                >
+                                <tr>
 
-                                    <span
-                                        class="rounded-xl
+                                    <td class="px-7 py-7">
+
+                                        <strong class="text-lg">
+                                            {{ $row['time'] }}
+                                        </strong>
+
+                                        <div class="text-xs
+                                               text-slate-400">
+                                            to
+                                            {{ $row['end_time'] }}
+                                        </div>
+
+                                    </td>
+
+
+                                    @foreach ($interactiveSubSections as $subSection)
+                                        <td
+                                            class="px-6 py-7
+                                               text-center
+                                               font-semibold">
+                                            {{ (int) ($interactiveAllocations[$subSection->id] ?? 0) }}
+                                        </td>
+                                    @endforeach
+
+
+                                    <td class="px-7 py-7
+                                           text-center">
+                                        <strong>
+                                            {{ $allocated }}
+                                            /
+                                            {{ $maximum }}
+                                        </strong>
+                                    </td>
+
+
+                                    <td class="px-7 py-7
+                                           text-center">
+                                        {{ $available }}
+                                        seats available
+                                    </td>
+
+
+                                    <td class="px-7 py-7
+                                           text-center">
+
+                                        <span
+                                            class="rounded-xl
                                                px-4 py-2
                                                text-xs
                                                font-semibold
-                                               {{
-                                                   $status[
-                                                       'class'
-                                                   ]
-                                               }}"
-                                    >
-                                        {{ $status['label'] }}
-                                    </span>
+                                               {{ $status['class'] }}">
+                                            {{ $status['label'] }}
+                                        </span>
 
-                                </td>
+                                    </td>
 
 
-                                <td
-                                    class="no-print
-                                           px-7 py-7"
-                                >
+                                    <td class="no-print
+                                           px-7 py-7">
 
-                                    <div
-                                        class="flex
+                                        <div
+                                            class="flex
                                                justify-center
-                                               gap-2"
-                                    >
+                                               gap-2">
 
-                                        @if (
-                                            auth()
-                                                ->user()
-                                                ->hasPermission(
-                                                    'section_offerings.edit'
-                                                )
-                                        )
-
-                                            <a
-                                                href="{{ route(
-                                                    'admin.section-offerings.edit',
-                                                    $row['id']
-                                                ) }}"
-                                                class="rounded-lg
+                                            @if (auth()->user()->hasPermission('section_offerings.edit'))
+                                                <a href="{{ route('admin.section-offerings.edit', $row['id']) }}"
+                                                    class="rounded-lg
                                                        border
                                                        border-blue-300
                                                        px-4 py-2
                                                        text-sm
                                                        font-semibold
                                                        text-blue-700
-                                                       hover:bg-blue-50"
-                                            >
-                                                View
-                                            </a>
-
-                                        @endif
+                                                       hover:bg-blue-50">
+                                                    View
+                                                </a>
+                                            @endif
 
 
-                                        @if (
-                                            auth()
-                                                ->user()
-                                                ->hasPermission(
-                                                    'section_offerings.delete'
-                                                )
-                                        )
+                                            @if (auth()->user()->hasPermission('section_offerings.delete'))
+                                                <form method="POST"
+                                                    action="{{ route('admin.section-offerings.destroy', $row['id']) }}"
+                                                    onsubmit="return confirm('Delete this Interactive offering?');">
 
-                                            <form
-                                                method="POST"
-                                                action="{{ route(
-                                                    'admin.section-offerings.destroy',
-                                                    $row['id']
-                                                ) }}"
-                                                onsubmit="return confirm('Delete this Interactive offering?');"
-                                            >
-
-                                                @csrf
-                                                @method('DELETE')
+                                                    @csrf
+                                                    @method('DELETE')
 
 
-                                                <button
-                                                    type="submit"
-                                                    class="rounded-lg
+                                                    <button type="submit"
+                                                        class="rounded-lg
                                                            border
                                                            border-red-300
                                                            px-4 py-2
                                                            text-sm
                                                            font-semibold
                                                            text-red-600
-                                                           hover:bg-red-50"
-                                                >
-                                                    Delete
-                                                </button>
+                                                           hover:bg-red-50">
+                                                        Delete
+                                                    </button>
 
-                                            </form>
+                                                </form>
+                                            @endif
 
-                                        @endif
+                                        </div>
 
-                                    </div>
+                                    </td>
 
-                                </td>
-
-                            </tr>
+                                </tr>
 
 
-                        @empty
+                            @empty
 
-                            <tr>
+                                <tr>
 
-                                <td
-                                    colspan="{{
-                                        5
-                                        +
-                                        $interactiveSubSections
-                                            ->count()
-                                    }}"
-                                    class="px-6 py-16
+                                    <td colspan="{{ 5 + $interactiveSubSections->count() }}"
+                                        class="px-6 py-16
                                            text-center
-                                           text-slate-500"
-                                >
-                                    No Interactive classes
-                                    on this day.
-                                </td>
+                                           text-slate-500">
+                                        No Interactive classes
+                                        on this day.
+                                    </td>
 
-                            </tr>
+                                </tr>
+                            @endforelse
 
-                        @endforelse
+                        </tbody>
 
-                    </tbody>
+                    </table>
 
-                </table>
+                </div>
 
-            </div>
-
-        @endif
+            @endif
 
 
 
-        {{-- Bottom information --}}
+            {{-- Bottom information --}}
 
-        <div
-            class="no-print
+            <div
+                class="no-print
                    grid
                    gap-4
                    rounded-2xl
@@ -1501,95 +1015,73 @@
                    border-blue-100
                    bg-white
                    p-5
-                   md:grid-cols-3"
-        >
+                   md:grid-cols-3">
 
-            <div class="px-4 py-2">
+                <div class="px-4 py-2">
 
-                <strong>
-                    Capacity
-                </strong>
+                    <strong>
+                        Capacity
+                    </strong>
 
 
-                <p
-                    class="mt-1
+                    <p class="mt-1
                            text-sm
-                           text-slate-500"
-                >
+                           text-slate-500">
 
-                    @if (
-                        $selectedSubject ===
-                        'english'
-                    )
+                        @if ($selectedSubject === 'english')
+                            Max
+                            {{ $englishCapacity ?: '—' }}
+                            students per timeslot
+                        @elseif ($selectedSubject === 'math')
+                            Shared max
+                            {{ $mathCapacity ?: '—' }}
+                            students
+                        @else
+                            Shared max
+                            {{ $interactiveCapacity ?: 5 }}
+                            students across Interactive English and Math
+                        @endif
 
-                        Max
-                        {{ $englishCapacity ?: '—' }}
-                        students per timeslot
+                    </p>
 
-                    @elseif (
-                        $selectedSubject ===
-                        'math'
-                    )
-
-                        Shared max
-                        {{ $mathCapacity ?: '—' }}
-                        students
-
-                    @else
-
-                        Shared max
-                        {{ $interactiveCapacity ?: 5 }}
-                        students across Interactive English and Math
-
-                    @endif
-
-                </p>
-
-            </div>
+                </div>
 
 
-            <div class="px-4 py-2">
+                <div class="px-4 py-2">
 
-                <strong>
-                    Selected Class
-                </strong>
+                    <strong>
+                        Selected Class
+                    </strong>
 
-                <p
-                    class="mt-1
+                    <p
+                        class="mt-1
                            text-sm
                            capitalize
-                           text-slate-500"
-                >
-                    {{ $selectedSubject }}
-                </p>
+                           text-slate-500">
+                        {{ $selectedSubject }}
+                    </p>
 
-            </div>
+                </div>
 
 
-            <div class="px-4 py-2">
+                <div class="px-4 py-2">
 
-                <strong>
-                    Selected Day
-                </strong>
+                    <strong>
+                        Selected Day
+                    </strong>
 
-                <p
-                    class="mt-1
+                    <p class="mt-1
                            text-sm
-                           text-slate-500"
-                >
-                    {{
-                        $selectedDay
-                            ?->day_name
-                        ?? '—'
-                    }}
-                </p>
+                           text-slate-500">
+                        {{ $selectedDay?->day_name ?? '—' }}
+                    </p>
+
+                </div>
 
             </div>
 
-        </div>
+        @endif
 
-    @endif
-
-</div>
+    </div>
 
 @endsection

@@ -28,51 +28,31 @@ class SectionOfferingSeeder extends Seeder
             'Interactive'
         )->firstOrFail();
 
-
         /*
         |--------------------------------------------------------------------------
-        | Interactive Sub-sections
-        |--------------------------------------------------------------------------
-        |
-        | Interactive has one combined capacity of five seats. Every student
-        | enrolled in an Interactive offering must be identified as either
-        | English or Math. updateOrCreate keeps this seeder safe to run again.
+        | Interactive sub-sections
         |--------------------------------------------------------------------------
         */
 
-        $interactiveSubSectionIds =
-            collect([
-                'English',
-                'Math',
-            ])
-                ->map(
-                    function ($name) use (
-                        $interactive
-                    ) {
-
-                        return SubSection::updateOrCreate(
-                            [
-                                'section_id' =>
-                                    $interactive->id,
-
-                                'sub_section_name' =>
-                                    $name,
-                            ],
-                            [
-                                'description' =>
-                                    'Interactive ' . $name,
-
-                                'is_active' =>
-                                    true,
-                            ]
-                        )->id;
-                    }
-                );
-
+        $interactiveSubSectionIds = collect([
+            'English',
+            'Math',
+        ])->map(function (string $name) use ($interactive) {
+            return SubSection::updateOrCreate(
+                [
+                    'section_id' => $interactive->id,
+                    'sub_section_name' => $name,
+                ],
+                [
+                    'description' => 'Interactive ' . $name,
+                    'is_active' => true,
+                ]
+            )->id;
+        });
 
         /*
         |--------------------------------------------------------------------------
-        | English + Math
+        | Regular English and Math timetable
         |--------------------------------------------------------------------------
         */
 
@@ -100,18 +80,15 @@ class SectionOfferingSeeder extends Seeder
             ],
         ];
 
-
         foreach ($regularTimetable as $dayName => $times) {
-
             $day = Day::where(
                 'day_name',
                 $dayName
             )->firstOrFail();
 
             foreach ($times as $time) {
-
                 /*
-                 * English
+                 * English: 28 seats
                  */
                 $this->createOffering(
                     $day->id,
@@ -121,62 +98,67 @@ class SectionOfferingSeeder extends Seeder
                     28
                 );
 
-
                 /*
-                 * Math
-                 *
-                 * ONE offering = 41 shared seats.
+                 * Math: 41 shared seats
                  */
-                $mathOffering =
-                    $this->createOffering(
-                        $day->id,
-                        $math->id,
-                        $time,
-                        45,
-                        41
-                    );
+                $mathOffering = $this->createOffering(
+                    $day->id,
+                    $math->id,
+                    $time,
+                    45,
+                    41
+                );
 
-
-                /*
-                 * All Math sub-sections are available
-                 * under this one Math offering.
-                 */
-                $mathSubSectionIds =
-                    $math
-                        ->subSections()
-                        ->where(
-                            'is_active',
-                            true
-                        )
-                        ->pluck(
-                            'sub_sections.id'
-                        );
+                $mathSubSectionIds = $math
+                    ->subSections()
+                    ->where(
+                        'is_active',
+                        true
+                    )
+                    ->pluck(
+                        'sub_sections.id'
+                    )
+                    ->all();
 
                 $mathOffering
                     ->subSections()
-                    ->sync(
-                        $mathSubSectionIds
-                    );
+                    ->sync($mathSubSectionIds);
             }
         }
 
-
         /*
         |--------------------------------------------------------------------------
-        | Interactive
+        | Final Interactive timetable
+        |--------------------------------------------------------------------------
+        |
+        | Monday and Thursday:
+        |
+        | 3:45 pm
+        | 4:15 pm
+        | 4:35 pm
+        | 5:00 pm
+        | 5:25 pm
+        | 5:50 pm
+        | 6:15 pm
+        | 6:40 pm
+        |
+        | Tuesday and Friday remain:
+        |
+        | 3:45 pm
+        | 4:15 pm
         |--------------------------------------------------------------------------
         */
 
         $interactiveTimetable = [
             'Monday' => [
                 '15:45',
-                '16:10',
-                '16:30',
-                '16:50',
-                '17:15',
-                '17:35',
-                '18:00',
-                '18:20',
+                '16:15',
+                '16:35',
+                '17:00',
+                '17:25',
+                '17:50',
+                '18:15',
+                '18:40',
             ],
 
             'Tuesday' => [
@@ -186,13 +168,13 @@ class SectionOfferingSeeder extends Seeder
 
             'Thursday' => [
                 '15:45',
-                '16:10',
-                '16:30',
-                '16:50',
-                '17:15',
-                '17:35',
-                '18:00',
-                '18:20',
+                '16:15',
+                '16:35',
+                '17:00',
+                '17:25',
+                '17:50',
+                '18:15',
+                '18:40',
             ],
 
             'Friday' => [
@@ -201,42 +183,163 @@ class SectionOfferingSeeder extends Seeder
             ],
         ];
 
-
         foreach (
-            $interactiveTimetable
-            as $dayName => $times
+            $interactiveTimetable as $dayName => $times
         ) {
-
             $day = Day::where(
                 'day_name',
                 $dayName
             )->firstOrFail();
 
-            foreach ($times as $time) {
+            if (in_array(
+                $dayName,
+                ['Monday', 'Thursday'],
+                true
+            )) {
+                $offerings = $this->syncChangedInteractiveOfferings(
+                    $day->id,
+                    $interactive->id,
+                    $times
+                );
+            } else {
+                $offerings = collect();
 
-                $interactiveOffering =
-                    $this->createOffering(
-                        $day->id,
-                        $interactive->id,
-                        $time,
-                        20,
-                        5
+                foreach ($times as $time) {
+                    $offerings->push(
+                        $this->createOffering(
+                            $day->id,
+                            $interactive->id,
+                            $time,
+                            20,
+                            5
+                        )
                     );
+                }
+            }
 
-
-                /*
-                 * Interactive is divided into
-                 * English and Math sub-sections.
-                 */
-                $interactiveOffering
+            foreach ($offerings as $offering) {
+                $offering
                     ->subSections()
                     ->sync(
-                        $interactiveSubSectionIds
+                        $interactiveSubSectionIds->all()
                     );
             }
         }
     }
 
+    private function syncChangedInteractiveOfferings(
+        int $dayId,
+        int $sectionId,
+        array $newTimes
+    ) {
+        /*
+        |--------------------------------------------------------------------------
+        | Preserve existing offering IDs
+        |--------------------------------------------------------------------------
+        |
+        | Existing student enrolments point to section_offering_id.
+        | Updating the existing records keeps those enrolments connected.
+        |--------------------------------------------------------------------------
+        */
+
+        $existingOfferings = SectionOffering::where(
+            'day_id',
+            $dayId
+        )
+            ->where(
+                'section_id',
+                $sectionId
+            )
+            ->where(
+                'is_active',
+                true
+            )
+            ->orderBy(
+                'start_time'
+            )
+            ->get();
+
+        $updatedOfferings = collect();
+
+        foreach ($newTimes as $index => $newTime) {
+            $existingOffering = $existingOfferings->get(
+                $index
+            );
+
+            if ($existingOffering) {
+                $start = Carbon::createFromFormat(
+                    'H:i',
+                    $newTime
+                );
+
+                $end = $start
+                    ->copy()
+                    ->addMinutes(20);
+
+                $existingOffering->update([
+                    'start_time' => $start->format(
+                        'H:i:s'
+                    ),
+
+                    'end_time' => $end->format(
+                        'H:i:s'
+                    ),
+
+                    'duration_minutes' => 20,
+
+                    'max_seats' => 5,
+
+                    'is_active' => true,
+                ]);
+
+                $updatedOfferings->push(
+                    $existingOffering->fresh()
+                );
+            } else {
+                $updatedOfferings->push(
+                    $this->createOffering(
+                        $dayId,
+                        $sectionId,
+                        $newTime,
+                        20,
+                        5
+                    )
+                );
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Deactivate extra old Interactive offerings
+        |--------------------------------------------------------------------------
+        |
+        | Do not delete them because existing enrolments may still reference
+        | their IDs. They will no longer appear as active offerings.
+        |--------------------------------------------------------------------------
+        */
+
+        $usedIds = $updatedOfferings
+            ->pluck('id')
+            ->all();
+
+        SectionOffering::where(
+            'day_id',
+            $dayId
+        )
+            ->where(
+                'section_id',
+                $sectionId
+            )
+            ->whereNotIn(
+                'id',
+                $usedIds
+            )
+            ->update([
+                'is_active' => false,
+            ]);
+
+        return $updatedOfferings;
+    }
 
     private function createOffering(
         int $dayId,
@@ -245,7 +348,6 @@ class SectionOfferingSeeder extends Seeder
         int $duration,
         int $maxSeats
     ): SectionOffering {
-
         $start = Carbon::createFromFormat(
             'H:i',
             $startTime
@@ -255,30 +357,26 @@ class SectionOfferingSeeder extends Seeder
             ->copy()
             ->addMinutes($duration);
 
-
         return SectionOffering::updateOrCreate(
             [
-                'day_id' =>
-                    $dayId,
+                'day_id' => $dayId,
 
-                'section_id' =>
-                    $sectionId,
+                'section_id' => $sectionId,
 
-                'start_time' =>
-                    $start->format('H:i:s'),
+                'start_time' => $start->format(
+                    'H:i:s'
+                ),
             ],
             [
-                'duration_minutes' =>
-                    $duration,
+                'duration_minutes' => $duration,
 
-                'end_time' =>
-                    $end->format('H:i:s'),
+                'end_time' => $end->format(
+                    'H:i:s'
+                ),
 
-                'max_seats' =>
-                    $maxSeats,
+                'max_seats' => $maxSeats,
 
-                'is_active' =>
-                    true,
+                'is_active' => true,
             ]
         );
     }

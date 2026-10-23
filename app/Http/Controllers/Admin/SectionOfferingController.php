@@ -9,6 +9,8 @@ use App\Models\Admin\SectionOffering;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class SectionOfferingController extends Controller
 {
@@ -90,8 +92,8 @@ class SectionOfferingController extends Controller
          */
         $viewType =
             $selectedSubject === 'interactive'
-                ? 'interactive'
-                : 'regular';
+            ? 'interactive'
+            : 'regular';
 
 
         /*
@@ -286,9 +288,7 @@ class SectionOfferingController extends Controller
                     $mathSection->id
                 )
                 ->map(
-                    function ($offering) use (
-                        $mathSubSections
-                    ) {
+                    function ($offering) use ($mathSubSections) {
                         $allocations = [];
 
                         foreach (
@@ -298,12 +298,12 @@ class SectionOfferingController extends Controller
                             $allocations[
                                 $subSection->id
                             ] = $offering
-                                ->enrolments
-                                ->where(
-                                    'sub_section_id',
-                                    $subSection->id
-                                )
-                                ->count();
+                                    ->enrolments
+                                    ->where(
+                                        'sub_section_id',
+                                        $subSection->id
+                                    )
+                                    ->count();
                         }
 
 
@@ -352,7 +352,7 @@ class SectionOfferingController extends Controller
                                     ->subSections
                                     ->pluck('id')
                                     ->map(
-                                        fn ($id) =>
+                                        fn($id) =>
                                             (int) $id
                                     )
                                     ->toArray(),
@@ -378,80 +378,79 @@ class SectionOfferingController extends Controller
                     $interactiveSection->id
                 )
                 ->map(
-                    function ($offering) use (
-                        $interactiveSubSections
-                    ) {
-                    $interactiveAllocations = [];
+                    function ($offering) use ($interactiveSubSections) {
+                        $interactiveAllocations = [];
 
 
-                    foreach (
-                        $interactiveSubSections
-                        as $subSection
-                    ) {
+                        foreach (
+                            $interactiveSubSections
+                            as $subSection
+                        ) {
 
-                        $interactiveAllocations[
-                            $subSection->id
-                        ] = $offering
-                            ->enrolments
-                            ->where(
-                                'sub_section_id',
+                            $interactiveAllocations[
                                 $subSection->id
-                            )
-                            ->count();
-                    }
+                            ] = $offering
+                                    ->enrolments
+                                    ->where(
+                                        'sub_section_id',
+                                        $subSection->id
+                                    )
+                                    ->count();
+                        }
 
 
-                    /*
-                     * Shared Interactive total.
-                     *
-                     * Do not filter by sub_section_id here.
-                     * Interactive English + Interactive Math
-                     * must remain within the same maximum of five.
-                     */
-                    $interactiveTotal =
-                        $offering
-                            ->enrolments
-                            ->count();
-
-                    return [
-                        'id' =>
-                            $offering->id,
-
-                        'time' =>
-                            Carbon::parse(
-                                $offering->start_time
-                            )->format('g:i A'),
-
-                        'end_time' =>
-                            Carbon::parse(
-                                $offering->end_time
-                            )->format('g:i A'),
-
-                        'allocated' =>
-                            $interactiveTotal,
-
-                        'interactive_allocations' =>
-                            $interactiveAllocations,
-
-                        'maximum' =>
-                            (int)
-                            $offering->max_seats,
-
-                        'wishlist_count' =>
-                            (int)
-                            $offering->wishlist_count,
-
-                        'available_sub_sections' =>
+                        /*
+                         * Shared Interactive total.
+                         *
+                         * Do not filter by sub_section_id here.
+                         * Interactive English + Interactive Math
+                         * must remain within the same maximum of five.
+                         */
+                        $interactiveTotal =
                             $offering
-                                ->subSections
-                                ->pluck('id')
-                                ->map(
-                                    fn ($id) =>
-                                        (int) $id
-                                )
-                                ->toArray(),
-                    ];
-                })
+                                ->enrolments
+                                ->count();
+
+                        return [
+                            'id' =>
+                                $offering->id,
+
+                            'time' =>
+                                Carbon::parse(
+                                    $offering->start_time
+                                )->format('g:i A'),
+
+                            'end_time' =>
+                                Carbon::parse(
+                                    $offering->end_time
+                                )->format('g:i A'),
+
+                            'allocated' =>
+                                $interactiveTotal,
+
+                            'interactive_allocations' =>
+                                $interactiveAllocations,
+
+                            'maximum' =>
+                                (int)
+                                $offering->max_seats,
+
+                            'wishlist_count' =>
+                                (int)
+                                $offering->wishlist_count,
+
+                            'available_sub_sections' =>
+                                $offering
+                                    ->subSections
+                                    ->pluck('id')
+                                    ->map(
+                                        fn($id) =>
+                                            (int) $id
+                                    )
+                                    ->toArray(),
+                        ];
+                    }
+                )
                 ->values();
         }
 
@@ -685,7 +684,7 @@ class SectionOfferingController extends Controller
                 ] ?? []
             )
                 ->map(
-                    fn ($id) =>
+                    fn($id) =>
                         (int) $id
                 )
                 ->unique()
@@ -697,7 +696,7 @@ class SectionOfferingController extends Controller
                 ->subSections
                 ->pluck('id')
                 ->map(
-                    fn ($id) =>
+                    fn($id) =>
                         (int) $id
                 )
                 ->values();
@@ -897,14 +896,7 @@ class SectionOfferingController extends Controller
         */
 
         DB::transaction(
-            function () use (
-                $selectedDays,
-                $section,
-                $validated,
-                $selectedSubSectionIds,
-                $startTimeValue,
-                $endTimeValue
-            ) {
+            function () use ($selectedDays, $section, $validated, $selectedSubSectionIds, $startTimeValue, $endTimeValue) {
                 foreach (
                     $selectedDays as $day
                 ) {
@@ -1028,7 +1020,7 @@ class SectionOfferingController extends Controller
                 ->subSections
                 ->pluck('id')
                 ->map(
-                    fn ($id) =>
+                    fn($id) =>
                         (int) $id
                 )
                 ->values()
@@ -1189,7 +1181,7 @@ class SectionOfferingController extends Controller
                 ] ?? []
             )
                 ->map(
-                    fn ($id) =>
+                    fn($id) =>
                         (int) $id
                 )
                 ->unique()
@@ -1201,7 +1193,7 @@ class SectionOfferingController extends Controller
                 ->subSections
                 ->pluck('id')
                 ->map(
-                    fn ($id) =>
+                    fn($id) =>
                         (int) $id
                 )
                 ->values();
@@ -1269,7 +1261,7 @@ class SectionOfferingController extends Controller
                     'sub_section_id'
                 )
                 ->map(
-                    fn ($id) =>
+                    fn($id) =>
                         (int) $id
                 )
                 ->unique();
@@ -1440,13 +1432,7 @@ class SectionOfferingController extends Controller
         */
 
         DB::transaction(
-            function () use (
-                $sectionOffering,
-                $validated,
-                $selectedSubSectionIds,
-                $startTimeValue,
-                $endTimeValue
-            ) {
+            function () use ($sectionOffering, $validated, $selectedSubSectionIds, $startTimeValue, $endTimeValue) {
                 $sectionOffering->update([
                     'day_id' =>
                         $validated[
@@ -1509,26 +1495,35 @@ class SectionOfferingController extends Controller
     */
 
     public function destroy(
+        Request $request,
         SectionOffering $sectionOffering
-    ) {
-        /*
-         * Do not delete offerings that have
-         * enrolment/wishlist records attached.
-         */
-        if (
-            $sectionOffering
-                ->enrolments()
-                ->exists()
-        ) {
-            return back()->with(
-                'error',
-                'This class offering cannot be deleted because student enrolment records are attached to it.'
-            );
-        }
+    ): RedirectResponse {
+        $request->validate([
+            'confirm_delete' => [
+                'required',
+                'accepted',
+            ],
+        ]);
 
+        DB::transaction(function () use ($sectionOffering) {
+            DB::table(
+                'section_offering_sub_section'
+            )
+                ->where(
+                    'section_offering_id',
+                    $sectionOffering->id
+                )
+                ->delete();
 
-        $sectionOffering->delete();
+            DB::table('enrolments')
+                ->where(
+                    'section_offering_id',
+                    $sectionOffering->id
+                )
+                ->delete();
 
+            $sectionOffering->delete();
+        });
 
         return redirect()
             ->route(
@@ -1536,7 +1531,7 @@ class SectionOfferingController extends Controller
             )
             ->with(
                 'success',
-                'Class offering deleted successfully.'
+                'Class and related class data deleted successfully.'
             );
     }
 
@@ -1564,9 +1559,7 @@ class SectionOfferingController extends Controller
                         $section
                             ->subSections
                             ->map(
-                                function (
-                                    $subSection
-                                ) {
+                                function ($subSection) {
                                     return [
                                         'id' =>
                                             (int)
@@ -1584,5 +1577,46 @@ class SectionOfferingController extends Controller
             })
             ->values()
             ->toArray();
+    }
+
+
+
+    public function confirmDestroy(
+        SectionOffering $sectionOffering
+    ): View {
+        $enrolments = DB::table('enrolments')
+            ->where(
+                'section_offering_id',
+                $sectionOffering->id
+            )
+            ->get();
+
+        $subSections = DB::table(
+            'section_offering_sub_section'
+        )
+            ->leftJoin(
+                'sub_sections',
+                'sub_sections.id',
+                '=',
+                'section_offering_sub_section.sub_section_id'
+            )
+            ->where(
+                'section_offering_sub_section.section_offering_id',
+                $sectionOffering->id
+            )
+            ->select(
+                'section_offering_sub_section.*',
+                'sub_sections.sub_section_name'
+            )
+            ->get();
+
+        return view(
+            'admin.section-offerings.confirm-delete',
+            [
+                'sectionOffering' => $sectionOffering,
+                'enrolments' => $enrolments,
+                'subSections' => $subSections,
+            ]
+        );
     }
 }
