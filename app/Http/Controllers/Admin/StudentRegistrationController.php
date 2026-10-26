@@ -844,6 +844,31 @@ class StudentRegistrationController extends Controller
                             $secondOffering->end_time
                         );
 
+                    $firstIsInteractive =
+                        strtolower(
+                            trim(
+                                $firstOffering
+                                    ->section
+                                    ?->section_name
+                                ?? ''
+                            )
+                        ) === 'interactive';
+
+                    $secondIsInteractive =
+                        strtolower(
+                            trim(
+                                $secondOffering
+                                    ->section
+                                    ?->section_name
+                                ?? ''
+                            )
+                        ) === 'interactive';
+
+                    /* Math and English may overlap. */
+                    if (!$firstIsInteractive && !$secondIsInteractive) {
+                        continue;
+                    }
+
                     $overlaps =
                         $firstStart->lt($secondEnd)
                         &&

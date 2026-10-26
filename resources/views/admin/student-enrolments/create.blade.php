@@ -650,7 +650,6 @@
                         null;
                 }
 
-
                 function updateSelectedCount() {
                     if (!counter) {
 

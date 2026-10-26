@@ -488,6 +488,31 @@ class StudentEnrolmentController extends Controller
                                 return false;
                             }
 
+                            $newIsInteractive =
+                                strtolower(
+                                    trim(
+                                        $newOffering
+                                            ->section
+                                            ?->section_name
+                                        ?? ''
+                                    )
+                                ) === 'interactive';
+
+                            $otherIsInteractive =
+                                strtolower(
+                                    trim(
+                                        $otherOffering
+                                            ->section
+                                            ?->section_name
+                                        ?? ''
+                                    )
+                                ) === 'interactive';
+
+                            /* Math and English may overlap. */
+                            if (!$newIsInteractive && !$otherIsInteractive) {
+                                return false;
+                            }
+
                             $otherStart = \Carbon\Carbon::parse($otherOffering->start_time);
                             $otherEnd = \Carbon\Carbon::parse($otherOffering->end_time);
 
@@ -1121,6 +1146,31 @@ class StudentEnrolmentController extends Controller
                                         (int) $newOffering->day_id
                                     ) {
 
+                                        return false;
+                                    }
+
+                                    $newIsInteractive =
+                                        strtolower(
+                                            trim(
+                                                $newOffering
+                                                    ->section
+                                                    ?->section_name
+                                                ?? ''
+                                            )
+                                        ) === 'interactive';
+
+                                    $otherIsInteractive =
+                                        strtolower(
+                                            trim(
+                                                $otherOffering
+                                                    ->section
+                                                    ?->section_name
+                                                ?? ''
+                                            )
+                                        ) === 'interactive';
+
+                                    /* Math and English may overlap. */
+                                    if (!$newIsInteractive && !$otherIsInteractive) {
                                         return false;
                                     }
 

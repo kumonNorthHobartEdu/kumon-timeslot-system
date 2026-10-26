@@ -1265,7 +1265,6 @@
                                 </td>
 
 
-
                                 {{-- Wishlist --}}
                                 <td
                                     class="px-5 py-4
@@ -1747,6 +1746,16 @@ document.addEventListener(
         }
 
 
+        function isInteractive(checkbox)
+        {
+            return (
+                checkbox.dataset.sectionName
+                ??
+                ''
+            ).trim().toLowerCase() === 'interactive';
+        }
+
+
         function enforceNoTimeConflict(checkbox)
         {
             if (!checkbox.checked) {
@@ -1760,6 +1769,12 @@ document.addEventListener(
                             existing !== checkbox
                             &&
                             existing.checked
+                            &&
+                            (
+                                isInteractive(checkbox)
+                                ||
+                                isInteractive(existing)
+                            )
                             &&
                             selectionsOverlap(
                                 checkbox,
